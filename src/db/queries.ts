@@ -213,7 +213,7 @@ export class QueryBuilder {
 
     // Validate required fields to prevent SQLite bind errors
     if (!node.id || !node.kind || !node.name || !node.filePath || !node.language) {
-      console.error('[CodeGraph] Skipping node with missing required fields:', {
+      console.error('[CodeViz] Skipping node with missing required fields:', {
         id: node.id,
         kind: node.kind,
         name: node.name,
@@ -297,7 +297,7 @@ export class QueryBuilder {
 
     // Validate required fields
     if (!node.id || !node.kind || !node.name || !node.filePath || !node.language) {
-      console.error('[CodeGraph] Skipping node update with missing required fields:', node.id);
+      console.error('[CodeViz] Skipping node update with missing required fields:', node.id);
       return;
     }
 

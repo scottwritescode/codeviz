@@ -1,5 +1,5 @@
 /**
- * CodeGraph Utilities
+ * CodeViz Utilities
  *
  * Common utility functions for memory management, concurrency, batching,
  * and security validation.
@@ -8,7 +8,7 @@
  *
  * @example
  * ```typescript
- * import { Mutex, processInBatches, MemoryMonitor, validatePathWithinRoot } from 'codegraph';
+ * import { Mutex, processInBatches, MemoryMonitor, validatePathWithinRoot } from 'codeviz';
  *
  * // Use mutex for concurrent safety
  * const mutex = new Mutex();
@@ -206,8 +206,8 @@ export class FileLock {
         // Treat locks older than the timeout as stale, regardless of PID
         if (lockAge < FileLock.STALE_TIMEOUT_MS && !isNaN(pid) && this.isProcessAlive(pid)) {
           throw new Error(
-            `CodeGraph database is locked by another process (PID ${pid}). ` +
-            `If this is stale, run 'codegraph unlock' or delete ${this.lockPath}`
+            `CodeViz database is locked by another process (PID ${pid}). ` +
+            `If this is stale, run 'codeviz unlock' or delete ${this.lockPath}`
           );
         }
 
@@ -230,8 +230,8 @@ export class FileLock {
       if (err.code === 'EEXIST') {
         // Race condition: another process grabbed the lock between our check and write
         throw new Error(
-          'CodeGraph database is locked by another process. ' +
-          `If this is stale, run 'codegraph unlock' or delete ${this.lockPath}`
+          'CodeViz database is locked by another process. ' +
+          `If this is stale, run 'codeviz unlock' or delete ${this.lockPath}`
         );
       }
       throw err;

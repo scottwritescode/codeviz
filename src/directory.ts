@@ -1,48 +1,48 @@
 /**
  * Directory Management
  *
- * Manages the .codegraph/ directory structure for CodeGraph data.
+ * Manages the .codeviz/ directory structure for CodeViz data.
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
 
 /**
- * CodeGraph directory name
+ * CodeViz directory name
  */
-export const CODEGRAPH_DIR = '.codegraph';
+export const CODEVIZ_DIR = '.codeviz';
 
 /**
- * Get the .codegraph directory path for a project
+ * Get the .codeviz directory path for a project
  */
-export function getCodeGraphDir(projectRoot: string): string {
-  return path.join(projectRoot, CODEGRAPH_DIR);
+export function getCodeVizDir(projectRoot: string): string {
+  return path.join(projectRoot, CODEVIZ_DIR);
 }
 
 /**
- * Check if a project has been initialized with CodeGraph
- * Requires both .codegraph/ directory AND codegraph.db to exist
+ * Check if a project has been initialized with CodeViz
+ * Requires both .codeviz/ directory AND codeviz.db to exist
  */
 export function isInitialized(projectRoot: string): boolean {
-  const codegraphDir = getCodeGraphDir(projectRoot);
-  if (!fs.existsSync(codegraphDir) || !fs.statSync(codegraphDir).isDirectory()) {
+  const codevizDir = getCodeVizDir(projectRoot);
+  if (!fs.existsSync(codevizDir) || !fs.statSync(codevizDir).isDirectory()) {
     return false;
   }
-  // Must have codegraph.db, not just .codegraph folder
-  const dbPath = path.join(codegraphDir, 'codegraph.db');
+  // Must have codeviz.db, not just .codeviz folder
+  const dbPath = path.join(codevizDir, 'codeviz.db');
   return fs.existsSync(dbPath);
 }
 
 /**
- * Find the nearest parent directory containing .codegraph/
+ * Find the nearest parent directory containing .codeviz/
  *
- * Walks up from the given path to find a CodeGraph-initialized project,
+ * Walks up from the given path to find a CodeViz-initialized project,
  * similar to how git finds .git/ directories.
  *
  * @param startPath - Directory to start searching from
- * @returns The project root containing .codegraph/, or null if not found
+ * @returns The project root containing .codeviz/, or null if not found
  */
-export function findNearestCodeGraphRoot(startPath: string): string | null {
+export function findNearestCodeVizRoot(startPath: string): string | null {
   let current = path.resolve(startPath);
   const root = path.parse(current).root;
 
@@ -64,26 +64,26 @@ export function findNearestCodeGraphRoot(startPath: string): string | null {
 }
 
 /**
- * Create the .codegraph directory structure
- * Note: Only throws if codegraph.db already exists, not just if .codegraph/ exists.
+ * Create the .codeviz directory structure
+ * Note: Only throws if codeviz.db already exists, not just if .codeviz/ exists.
  */
 export function createDirectory(projectRoot: string): void {
-  const codegraphDir = getCodeGraphDir(projectRoot);
-  const dbPath = path.join(codegraphDir, 'codegraph.db');
+  const codevizDir = getCodeVizDir(projectRoot);
+  const dbPath = path.join(codevizDir, 'codeviz.db');
 
-  // Only throw if CodeGraph is actually initialized (db exists)
-  // .codegraph/ folder alone is fine
+  // Only throw if CodeViz is actually initialized (db exists)
+  // .codeviz/ folder alone is fine
   if (fs.existsSync(dbPath)) {
-    throw new Error(`CodeGraph already initialized in ${projectRoot}`);
+    throw new Error(`CodeViz already initialized in ${projectRoot}`);
   }
 
   // Create main directory (if it doesn't exist)
-  fs.mkdirSync(codegraphDir, { recursive: true });
+  fs.mkdirSync(codevizDir, { recursive: true });
 
-  // Create .gitignore inside .codegraph (if it doesn't exist)
-  const gitignorePath = path.join(codegraphDir, '.gitignore');
+  // Create .gitignore inside .codeviz (if it doesn't exist)
+  const gitignorePath = path.join(codevizDir, '.gitignore');
   if (!fs.existsSync(gitignorePath)) {
-    const gitignoreContent = `# CodeGraph data files
+    const gitignoreContent = `# CodeViz data files
 # These are local to each machine and should not be committed
 
 # Database
@@ -106,40 +106,40 @@ cache/
 }
 
 /**
- * Remove the .codegraph directory
+ * Remove the .codeviz directory
  */
 export function removeDirectory(projectRoot: string): void {
-  const codegraphDir = getCodeGraphDir(projectRoot);
+  const codevizDir = getCodeVizDir(projectRoot);
 
-  if (!fs.existsSync(codegraphDir)) {
+  if (!fs.existsSync(codevizDir)) {
     return;
   }
 
-  // Verify .codegraph is a real directory, not a symlink pointing elsewhere
-  const lstat = fs.lstatSync(codegraphDir);
+  // Verify .codeviz is a real directory, not a symlink pointing elsewhere
+  const lstat = fs.lstatSync(codevizDir);
   if (lstat.isSymbolicLink()) {
     // Only remove the symlink itself, never follow it for recursive delete
-    fs.unlinkSync(codegraphDir);
+    fs.unlinkSync(codevizDir);
     return;
   }
 
   if (!lstat.isDirectory()) {
     // Not a directory - remove the single file
-    fs.unlinkSync(codegraphDir);
+    fs.unlinkSync(codevizDir);
     return;
   }
 
   // Recursively remove directory
-  fs.rmSync(codegraphDir, { recursive: true, force: true });
+  fs.rmSync(codevizDir, { recursive: true, force: true });
 }
 
 /**
- * Get all files in the .codegraph directory
+ * Get all files in the .codeviz directory
  */
 export function listDirectoryContents(projectRoot: string): string[] {
-  const codegraphDir = getCodeGraphDir(projectRoot);
+  const codevizDir = getCodeVizDir(projectRoot);
 
-  if (!fs.existsSync(codegraphDir)) {
+  if (!fs.existsSync(codevizDir)) {
     return [];
   }
 
@@ -151,7 +151,7 @@ export function listDirectoryContents(projectRoot: string): string[] {
     for (const entry of entries) {
       const relativePath = prefix ? `${prefix}/${entry.name}` : entry.name;
 
-      // Skip symlinks to prevent following links outside .codegraph
+      // Skip symlinks to prevent following links outside .codeviz
       if (entry.isSymbolicLink()) {
         continue;
       }
@@ -164,17 +164,17 @@ export function listDirectoryContents(projectRoot: string): string[] {
     }
   }
 
-  walkDir(codegraphDir);
+  walkDir(codevizDir);
   return files;
 }
 
 /**
- * Get the total size of the .codegraph directory in bytes
+ * Get the total size of the .codeviz directory in bytes
  */
 export function getDirectorySize(projectRoot: string): number {
-  const codegraphDir = getCodeGraphDir(projectRoot);
+  const codevizDir = getCodeVizDir(projectRoot);
 
-  if (!fs.existsSync(codegraphDir)) {
+  if (!fs.existsSync(codevizDir)) {
     return 0;
   }
 
@@ -184,7 +184,7 @@ export function getDirectorySize(projectRoot: string): number {
     const entries = fs.readdirSync(dir, { withFileTypes: true });
 
     for (const entry of entries) {
-      // Skip symlinks to prevent following links outside .codegraph
+      // Skip symlinks to prevent following links outside .codeviz
       if (entry.isSymbolicLink()) {
         continue;
       }
@@ -200,19 +200,19 @@ export function getDirectorySize(projectRoot: string): number {
     }
   }
 
-  walkDir(codegraphDir);
+  walkDir(codevizDir);
   return totalSize;
 }
 
 /**
- * Ensure a subdirectory exists within .codegraph
+ * Ensure a subdirectory exists within .codeviz
  */
 export function ensureSubdirectory(projectRoot: string, subdirName: string): string {
   if (subdirName.includes('..') || subdirName.includes(path.sep) || subdirName.includes('/')) {
     throw new Error(`Invalid subdirectory name: ${subdirName}`);
   }
 
-  const subdirPath = path.join(getCodeGraphDir(projectRoot), subdirName);
+  const subdirPath = path.join(getCodeVizDir(projectRoot), subdirName);
 
   if (!fs.existsSync(subdirPath)) {
     fs.mkdirSync(subdirPath, { recursive: true });
@@ -222,34 +222,34 @@ export function ensureSubdirectory(projectRoot: string, subdirName: string): str
 }
 
 /**
- * Check if the .codegraph directory has valid structure
+ * Check if the .codeviz directory has valid structure
  */
 export function validateDirectory(projectRoot: string): {
   valid: boolean;
   errors: string[];
 } {
   const errors: string[] = [];
-  const codegraphDir = getCodeGraphDir(projectRoot);
+  const codevizDir = getCodeVizDir(projectRoot);
 
-  if (!fs.existsSync(codegraphDir)) {
-    errors.push('CodeGraph directory does not exist');
+  if (!fs.existsSync(codevizDir)) {
+    errors.push('CodeViz directory does not exist');
     return { valid: false, errors };
   }
 
-  if (!fs.statSync(codegraphDir).isDirectory()) {
-    errors.push('.codegraph exists but is not a directory');
+  if (!fs.statSync(codevizDir).isDirectory()) {
+    errors.push('.codeviz exists but is not a directory');
     return { valid: false, errors };
   }
 
   // Auto-repair missing .gitignore (non-critical file)
-  const gitignorePath = path.join(codegraphDir, '.gitignore');
+  const gitignorePath = path.join(codevizDir, '.gitignore');
   if (!fs.existsSync(gitignorePath)) {
     try {
-      const gitignoreContent = `# CodeGraph data files\n# These are local to each machine and should not be committed\n\n# Database\n*.db\n*.db-wal\n*.db-shm\n\n# Cache\ncache/\n\n# Logs\n*.log\n\n# Hook markers\n.dirty\n`;
+      const gitignoreContent = `# CodeViz data files\n# These are local to each machine and should not be committed\n\n# Database\n*.db\n*.db-wal\n*.db-shm\n\n# Cache\ncache/\n\n# Logs\n*.log\n\n# Hook markers\n.dirty\n`;
       fs.writeFileSync(gitignorePath, gitignoreContent, 'utf-8');
     } catch {
       // Non-fatal: warn but don't block
-      errors.push('.gitignore missing in .codegraph directory and could not be created');
+      errors.push('.gitignore missing in .codeviz directory and could not be created');
     }
   }
 

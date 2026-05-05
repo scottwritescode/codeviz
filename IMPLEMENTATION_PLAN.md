@@ -1,19 +1,19 @@
-# CodeGraph: Universal Code Knowledge Graph
+# CodeViz: Universal Code Knowledge Graph
 
 ## Overview
 
-CodeGraph is a local-first code intelligence system that builds a semantic knowledge graph from any codebase. It provides structural understanding of code relationships—not just text similarity—enabling AI assistants to understand how code connects, what depends on what, and what breaks when something changes.
+CodeViz is a local-first code intelligence system that builds a semantic knowledge graph from any codebase. It provides structural understanding of code relationships—not just text similarity—enabling AI assistants to understand how code connects, what depends on what, and what breaks when something changes.
 
 **Type:** Headless library (no UI components — purely an API)  
 **Runtime:** Node.js (works standalone, in Electron, or any Node environment)  
 **Distribution:** npm package, installable in any project  
-**Per-Project Data:** `.codegraph/` directory in each indexed project
+**Per-Project Data:** `.codeviz/` directory in each indexed project
 **Core Principle:** Deterministic extraction from AST, not AI-generated summaries
 
 ### Use Cases
 
 1. **Beads Dashboard** — Integrated as a library to provide code intelligence
-2. **Claude Code CLI users** — Install globally, run `codegraph init` in any project
+2. **Claude Code CLI users** — Install globally, run `codeviz init` in any project
 3. **Any Node.js application** — Import as a library for code analysis
 4. **MCP Server** — Expose as an MCP tool that Claude Code can query directly
 
@@ -23,7 +23,7 @@ CodeGraph is a local-first code intelligence system that builds a semantic knowl
 
 1. **Universal language support** via tree-sitter (PHP, Swift, Kotlin, Java, TypeScript, Python, Liquid, Ruby, Go, Rust, C#, etc.)
 2. **Zero external API dependencies** for core functionality (local embeddings, local database)
-3. **Portable per-project installation** — each project gets its own `.codegraph/` directory
+3. **Portable per-project installation** — each project gets its own `.codeviz/` directory
 4. **Incremental updates** via git hooks and hash-based change detection
 5. **Rich structural queries** — callers, callees, impact radius, dependency chains
 6. **Semantic search** — vector similarity to find entry points, then graph expansion
@@ -45,7 +45,7 @@ CodeGraph is a local-first code intelligence system that builds a semantic knowl
 │                           │                                     │
 │                           ▼                                     │
 ├─────────────────────────────────────────────────────────────────┤
-│                     CODEGRAPH LIBRARY                           │
+│                     CODEVIZ LIBRARY                           │
 │                      (npm package)                              │
 │                                                                 │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐ │
@@ -59,7 +59,7 @@ CodeGraph is a local-first code intelligence system that builds a semantic knowl
 │  ┌─────────────────────────────────────────────────────────────┐│
 │  │                   STORAGE LAYER                             ││
 │  │         SQLite + sqlite-vss (per project)                   ││
-│  │              .codegraph/graph.db                        ││
+│  │              .codeviz/graph.db                        ││
 │  └─────────────────────────────────────────────────────────────┘│
 │                          ▲                                      │
 │                          │                                      │
@@ -80,10 +80,10 @@ CodeGraph is a local-first code intelligence system that builds a semantic knowl
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 
-Per-Project Installation (created by codegraph init):
+Per-Project Installation (created by codeviz init):
 ┌─────────────────────────────────────────────────────────────────┐
 │  my-laravel-app/                                                │
-│  ├── .codegraph/                                           │
+│  ├── .codeviz/                                           │
 │  │   ├── graph.db            # SQLite database with vectors     │
 │  │   ├── config.json         # Project-specific settings        │
 │  │   └── .gitignore          # Ignore db, keep config           │
@@ -101,13 +101,13 @@ Per-Project Installation (created by codegraph init):
 ## File Structure (npm package)
 
 ```
-codegraph/
+codeviz/
 ├── package.json
 ├── tsconfig.json
 ├── README.md
 │
 ├── src/
-│   ├── index.ts                    # Main CodeGraph class, public API
+│   ├── index.ts                    # Main CodeViz class, public API
 │   ├── types.ts                    # TypeScript interfaces
 │   │
 │   ├── db/
@@ -167,7 +167,7 @@ codegraph/
 │       └── formatter.ts            # Output formatting for Claude
 │
 ├── bin/
-│   └── codegraph.ts                # CLI entry point (optional standalone usage)
+│   └── codeviz.ts                # CLI entry point (optional standalone usage)
 │
 └── __tests__/                      # Test files mirror src structure
     ├── extraction/
@@ -184,7 +184,7 @@ codegraph/
 
 ```sql
 -- ============================================================
--- CODEGRAPH SCHEMA v1
+-- CODEVIZ SCHEMA v1
 -- ============================================================
 
 -- Metadata table for schema versioning and project info
@@ -459,7 +459,7 @@ export interface CodeBlock {
 // CONFIG TYPES
 // ============================================================
 
-export interface CodeGraphConfig {
+export interface CodeVizConfig {
   version: number;
   projectName?: string;
   languages: Language[];
@@ -489,7 +489,7 @@ export type FrameworkHint =
   | 'vue'
   | 'svelte';
 
-export const DEFAULT_CONFIG: CodeGraphConfig = {
+export const DEFAULT_CONFIG: CodeVizConfig = {
   version: 1,
   languages: [],
   exclude: [
@@ -520,25 +520,25 @@ export const DEFAULT_CONFIG: CodeGraphConfig = {
 **File: `src/index.ts`**
 
 ```typescript
-export class CodeGraph {
+export class CodeViz {
   // ============================================================
   // LIFECYCLE
   // ============================================================
   
   /**
-   * Initialize CodeGraph for a project directory.
-   * Creates .codegraph/ if it doesn't exist.
+   * Initialize CodeViz for a project directory.
+   * Creates .codeviz/ if it doesn't exist.
    */
-  static async init(projectPath: string, config?: Partial<CodeGraphConfig>): Promise<CodeGraph>;
+  static async init(projectPath: string, config?: Partial<CodeVizConfig>): Promise<CodeViz>;
   
   /**
-   * Open existing CodeGraph for a project.
+   * Open existing CodeViz for a project.
    * Throws if not initialized.
    */
-  static async open(projectPath: string): Promise<CodeGraph>;
+  static async open(projectPath: string): Promise<CodeViz>;
   
   /**
-   * Check if a project has CodeGraph initialized.
+   * Check if a project has CodeViz initialized.
    */
   static async isInitialized(projectPath: string): Promise<boolean>;
   
@@ -713,12 +713,12 @@ export class CodeGraph {
   /**
    * Update configuration.
    */
-  async updateConfig(config: Partial<CodeGraphConfig>): Promise<void>;
+  async updateConfig(config: Partial<CodeVizConfig>): Promise<void>;
   
   /**
    * Get current configuration.
    */
-  getConfig(): CodeGraphConfig;
+  getConfig(): CodeVizConfig;
 }
 
 // ============================================================
@@ -785,7 +785,7 @@ export interface Path {
 export interface ExportedGraph {
   version: number;
   exportedAt: number;
-  config: CodeGraphConfig;
+  config: CodeVizConfig;
   stats: GraphStats;
   nodes: Node[];
   edges: Edge[];
@@ -1436,42 +1436,42 @@ function formatNodeTree(node: Node, subgraph: Subgraph, depth: number): string {
 
 ## Installation & Integration
 
-**How to use CodeGraph (headless library, no UI):**
+**How to use CodeViz (headless library, no UI):**
 
 ### Option 1: CLI (for any project, no code required)
 
 ```bash
 # Install globally
-npm install -g codegraph
+npm install -g codeviz
 
 # Initialize in any project
 cd /path/to/my-laravel-app
-codegraph init
+codeviz init
 
 # Index the codebase
-codegraph index
+codeviz index
 
 # Query the graph
-codegraph query "what calls PaymentService"
-codegraph impact "app/Services/AuthService.php"
+codeviz query "what calls PaymentService"
+codeviz impact "app/Services/AuthService.php"
 
 # Build context for a task (outputs markdown)
-codegraph context "Fix checkout silent failure"
+codeviz context "Fix checkout silent failure"
 
 # Check status
-codegraph status
+codeviz status
 
 # Sync after changes
-codegraph sync
+codeviz sync
 ```
 
 ### Option 2: Library (for integration into apps like Beads Dashboard)
 
 ```typescript
-import { CodeGraph } from 'codegraph';
+import { CodeViz } from 'codeviz';
 
 // Initialize for a project
-const graph = await CodeGraph.init('/path/to/project');
+const graph = await CodeViz.init('/path/to/project');
 
 // Full index with optional progress callback
 await graph.indexAll({
@@ -1481,7 +1481,7 @@ await graph.indexAll({
 });
 
 // Or open existing and sync
-const graph = await CodeGraph.open('/path/to/project');
+const graph = await CodeViz.open('/path/to/project');
 const syncResult = await graph.sync();
 
 // Build context for a task (returns structured data)
@@ -1502,28 +1502,28 @@ await graph.close();
 
 ```bash
 # Run as MCP server (Claude Code can query directly)
-codegraph serve --mcp
+codeviz serve --mcp
 
 # In Claude Code's MCP config, add:
 # {
-#   "codegraph": {
-#     "command": "codegraph",
+#   "codeviz": {
+#     "command": "codeviz",
 #     "args": ["serve", "--mcp", "--project", "/path/to/project"]
 #   }
 # }
 ```
 
 Then Claude Code can use tools like:
-- `codegraph_search` — semantic search
-- `codegraph_context` — build context for a task
-- `codegraph_callers` — who calls this function
-- `codegraph_impact` — what's affected if I change this
+- `codeviz_search` — semantic search
+- `codeviz_context` — build context for a task
+- `codeviz_callers` — who calls this function
+- `codeviz_impact` — what's affected if I change this
 
 **What gets created in the project:**
 
 ```
 my-project/
-├── .codegraph/
+├── .codeviz/
 │   ├── graph.db          # SQLite database (gitignored)
 │   ├── config.json       # User can customize (committed)
 │   └── .gitignore        # Contains: graph.db
@@ -1532,7 +1532,7 @@ my-project/
         └── post-commit   # Auto-installed hook
 ```
 
-**Default `.codegraph/config.json`:**
+**Default `.codeviz/config.json`:**
 
 ```json
 {
@@ -1557,7 +1557,7 @@ my-project/
 - [ ] SQLite database initialization with schema
 - [ ] Basic types and interfaces
 - [ ] Config file handling
-- [ ] .codegraph/ directory management
+- [ ] .codeviz/ directory management
 
 ### Phase 2: Tree-sitter Extraction (Week 1-2)
 - [ ] Tree-sitter native bindings setup (works in Node.js, Electron, etc.)
@@ -1614,19 +1614,19 @@ my-project/
 
 ### Phase 10: CLI (Week 5-6, Optional)
 - [ ] CLI argument parsing (commander or yargs)
-- [ ] `codegraph init` command
-- [ ] `codegraph index` command
-- [ ] `codegraph query` command
-- [ ] `codegraph context` command
-- [ ] `codegraph status` command
-- [ ] `codegraph sync` command
+- [ ] `codeviz init` command
+- [ ] `codeviz index` command
+- [ ] `codeviz query` command
+- [ ] `codeviz context` command
+- [ ] `codeviz status` command
+- [ ] `codeviz sync` command
 
 ### Phase 11: MCP Server (Week 6, Optional)
 - [ ] MCP protocol implementation
-- [ ] `codegraph_search` tool
-- [ ] `codegraph_context` tool
-- [ ] `codegraph_callers` / `codegraph_callees` tools
-- [ ] `codegraph_impact` tool
+- [ ] `codeviz_search` tool
+- [ ] `codeviz_context` tool
+- [ ] `codeviz_callers` / `codeviz_callees` tools
+- [ ] `codeviz_impact` tool
 - [ ] Stdio transport for Claude Code integration
 
 ---
@@ -1636,7 +1636,7 @@ my-project/
 ```typescript
 // Example test structure
 
-describe('CodeGraph', () => {
+describe('CodeViz', () => {
   describe('extraction', () => {
     it('extracts functions from TypeScript', async () => {
       const code = `

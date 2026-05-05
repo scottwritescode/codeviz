@@ -4,12 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-CodeGraph is a local-first code intelligence system that builds a semantic knowledge graph from any codebase. It provides structural understanding of code relationships using tree-sitter for AST parsing and SQLite for storage.
+CodeViz is a local-first code intelligence system that builds a semantic knowledge graph from any codebase. It provides structural understanding of code relationships using tree-sitter for AST parsing and SQLite for storage.
 
 **Key characteristics:**
 - Headless library (no UI) - purely an API
 - Node.js runtime (works standalone, in Electron, or any Node environment)
-- Per-project data stored in `.codegraph/` directory
+- Per-project data stored in `.codeviz/` directory
 - Deterministic extraction from AST, not AI-generated summaries
 
 ## Build and Development Commands
@@ -39,7 +39,7 @@ npx vitest run __tests__/extraction.test.ts -t "TypeScript"  # Run tests matchin
 
 ```
 src/
-├── index.ts              # Main CodeGraph class - public API entry point
+├── index.ts              # Main CodeViz class - public API entry point
 ├── types.ts              # All TypeScript interfaces and types
 ├── db/                   # SQLite database layer
 │   ├── index.ts          # DatabaseConnection class
@@ -74,12 +74,12 @@ src/
 │   ├── index.ts          # MCPServer class
 │   ├── tools.ts          # MCP tool definitions
 │   └── transport.ts      # Stdio transport
-└── bin/codegraph.ts      # CLI entry point
+└── bin/codeviz.ts      # CLI entry point
 ```
 
 ### Key Classes
 
-- **CodeGraph** (`src/index.ts`): Main entry point. Lifecycle methods (`init`, `open`, `close`), indexing (`indexAll`, `sync`), graph queries (`traverse`, `getCallGraph`, `getImpactRadius`), context building (`buildContext`)
+- **CodeViz** (`src/index.ts`): Main entry point. Lifecycle methods (`init`, `open`, `close`), indexing (`indexAll`, `sync`), graph queries (`traverse`, `getCallGraph`, `getImpactRadius`), context building (`buildContext`)
 
 - **ExtractionOrchestrator** (`src/extraction/index.ts`): Coordinates file scanning, parsing, and storing. Uses tree-sitter native bindings for each supported language
 
@@ -109,14 +109,14 @@ TypeScript, JavaScript, TSX, JSX, Svelte, Python, Go, Rust, Java, C, C++, C#, PH
 ## CLI Usage
 
 ```bash
-codegraph init [path]       # Initialize in project
-codegraph index [path]      # Full index
-codegraph sync [path]       # Incremental update
-codegraph status [path]     # Show statistics
-codegraph query <search>    # Search symbols
-codegraph context <task>    # Build context for AI
-codegraph hooks install     # Install git auto-sync
-codegraph serve --mcp       # Start MCP server
+codeviz init [path]       # Initialize in project
+codeviz index [path]      # Full index
+codeviz sync [path]       # Incremental update
+codeviz status [path]     # Show statistics
+codeviz query <search>    # Search symbols
+codeviz context <task>    # Build context for AI
+codeviz hooks install     # Install git auto-sync
+codeviz serve --mcp       # Start MCP server
 ```
 
 ## MCP Tools Best Practices
@@ -125,16 +125,16 @@ Use these tools **directly in the main session** for fast code exploration (repl
 
 | Tool | Use For |
 |------|---------|
-| `codegraph_explore` | **Deep exploration** — comprehensive context for a topic in ONE call |
-| `codegraph_context` | Quick context for a task (lighter than explore) |
-| `codegraph_search` | Find symbols by name (functions, classes, types) |
-| `codegraph_callers` | Find what calls a function |
-| `codegraph_callees` | Find what a function calls |
-| `codegraph_impact` | See what's affected by changing a symbol |
-| `codegraph_node` | Get details + source code for a symbol |
+| `codeviz_explore` | **Deep exploration** — comprehensive context for a topic in ONE call |
+| `codeviz_context` | Quick context for a task (lighter than explore) |
+| `codeviz_search` | Find symbols by name (functions, classes, types) |
+| `codeviz_callers` | Find what calls a function |
+| `codeviz_callees` | Find what a function calls |
+| `codeviz_impact` | See what's affected by changing a symbol |
+| `codeviz_node` | Get details + source code for a symbol |
 
 ### Important
-CodeGraph provides **code context**, not product requirements. For new features, still ask the user about:
+CodeViz provides **code context**, not product requirements. For new features, still ask the user about:
 - UX preferences and behavior
 - Edge cases and error handling
 - Acceptance criteria

@@ -2,14 +2,14 @@
  * File Watcher
  *
  * Watches the project directory for file changes and triggers
- * debounced sync operations to keep the code graph up-to-date.
+ * debounced sync operations to keep CodeViz up-to-date.
  *
  * Uses Node.js native fs.watch with recursive mode (macOS FSEvents,
  * Windows ReadDirectoryChangesW, Linux inotify on Node 19+).
  */
 
 import * as fs from 'fs';
-import { CodeGraphConfig } from '../types';
+import { CodeVizConfig } from '../types';
 import { shouldIncludeFile } from '../extraction';
 import { logDebug, logWarn } from '../errors';
 import { normalizePath } from '../utils';
@@ -43,8 +43,8 @@ export interface WatchOptions {
  * Design goals:
  * - Minimal resource usage (native OS file events, no polling)
  * - Debounced to avoid thrashing on rapid saves
- * - Filters against CodeGraph include/exclude patterns
- * - Ignores .codegraph/ directory changes
+ * - Filters against CodeViz include/exclude patterns
+ * - Ignores .codeviz/ directory changes
  */
 export class FileWatcher {
   private watcher: fs.FSWatcher | null = null;
@@ -54,7 +54,7 @@ export class FileWatcher {
   private stopped = false;
 
   private readonly projectRoot: string;
-  private readonly config: CodeGraphConfig;
+  private readonly config: CodeVizConfig;
   private readonly debounceMs: number;
   private readonly syncFn: () => Promise<{ filesChanged: number; durationMs: number }>;
   private readonly onSyncComplete?: WatchOptions['onSyncComplete'];
@@ -62,7 +62,7 @@ export class FileWatcher {
 
   constructor(
     projectRoot: string,
-    config: CodeGraphConfig,
+    config: CodeVizConfig,
     syncFn: () => Promise<{ filesChanged: number; durationMs: number }>,
     options: WatchOptions = {}
   ) {
@@ -92,11 +92,11 @@ export class FileWatcher {
           // Normalize path separators
           const normalized = normalizePath(filename);
 
-          // Ignore .codegraph/ directory changes (our own DB writes)
+          // Ignore .codeviz/ directory changes (our own DB writes)
           if (
-            normalized === '.codegraph' ||
-            normalized.startsWith('.codegraph/') ||
-            normalized.startsWith('.codegraph\\')
+            normalized === '.codeviz' ||
+            normalized.startsWith('.codeviz/') ||
+            normalized.startsWith('.codeviz\\')
           ) {
             return;
           }

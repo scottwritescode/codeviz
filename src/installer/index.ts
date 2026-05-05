@@ -1,5 +1,5 @@
 /**
- * CodeGraph Interactive Installer
+ * CodeViz Interactive Installer
  *
  * Uses @clack/prompts for a polished interactive CLI experience.
  */
@@ -46,11 +46,11 @@ function getVersion(): string {
 export async function runInstaller(): Promise<void> {
   const clack = await importESM('@clack/prompts');
 
-  clack.intro(`CodeGraph v${getVersion()}`);
+  clack.intro(`CodeViz v${getVersion()}`);
 
   // Step 1: Install globally
   const shouldInstallGlobally = await clack.confirm({
-    message: 'Install codegraph globally? (Required for MCP server)',
+    message: 'Install codeviz globally? (Required for MCP server)',
     initialValue: true,
   });
 
@@ -61,13 +61,13 @@ export async function runInstaller(): Promise<void> {
 
   if (shouldInstallGlobally) {
     const s = clack.spinner();
-    s.start('Installing codegraph globally...');
+    s.start('Installing codeviz globally...');
     try {
-      execSync('npm install -g @colbymchenry/codegraph', { stdio: 'pipe' });
-      s.stop('Installed codegraph globally');
+      execSync('npm install -g @colbymchenry/codeviz', { stdio: 'pipe' });
+      s.stop('Installed codeviz globally');
     } catch {
       s.stop('Could not install globally (permission denied)');
-      clack.log.warn('Try: sudo npm install -g @colbymchenry/codegraph');
+      clack.log.warn('Try: sudo npm install -g @colbymchenry/codeviz');
     }
   } else {
     clack.log.info('Skipped global install — MCP server may not work without it');
@@ -90,7 +90,7 @@ export async function runInstaller(): Promise<void> {
 
   // Step 3: Auto-allow permissions
   const autoAllow = await clack.confirm({
-    message: 'Auto-allow CodeGraph commands? (Skips permission prompts)',
+    message: 'Auto-allow CodeViz commands? (Skips permission prompts)',
     initialValue: true,
   });
 
@@ -110,12 +110,12 @@ export async function runInstaller(): Promise<void> {
   // Done
   if (location === 'global') {
     clack.note(
-      'cd your-project\ncodegraph init -i',
+      'cd your-project\ncodeviz init -i',
       'Quick start',
     );
   }
 
-  clack.outro('Done! Restart Claude Code to use CodeGraph.');
+  clack.outro('Done! Restart Claude Code to use CodeViz.');
 }
 
 /**
@@ -148,36 +148,36 @@ function writeConfigs(
   } else if (claudeMdResult.updated) {
     clack.log.success(`Updated ${claudeMdPath}`);
   } else {
-    clack.log.success(`Added CodeGraph instructions to ${claudeMdPath}`);
+    clack.log.success(`Added CodeViz instructions to ${claudeMdPath}`);
   }
 }
 
 /**
- * Initialize CodeGraph in the current project (for local installs)
+ * Initialize CodeViz in the current project (for local installs)
  */
 async function initializeLocalProject(clack: typeof import('@clack/prompts')): Promise<void> {
   const projectPath = process.cwd();
 
-  // Lazy-load CodeGraph (requires native modules)
-  let CodeGraph: typeof import('../index').default;
+  // Lazy-load CodeViz (requires native modules)
+  let CodeViz: typeof import('../index').default;
   try {
-    CodeGraph = (await import('../index')).default;
+    CodeViz = (await import('../index')).default;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     clack.log.error(`Could not load native modules: ${msg}`);
-    clack.log.info('Skipping project initialization. Run "codegraph init -i" later.');
+    clack.log.info('Skipping project initialization. Run "codeviz init -i" later.');
     return;
   }
 
   // Check if already initialized
-  if (CodeGraph.isInitialized(projectPath)) {
-    clack.log.info('CodeGraph already initialized in this project');
+  if (CodeViz.isInitialized(projectPath)) {
+    clack.log.info('CodeViz already initialized in this project');
     return;
   }
 
   // Initialize
-  const cg = await CodeGraph.init(projectPath);
-  clack.log.success('Created .codegraph/ directory');
+  const cg = await CodeViz.init(projectPath);
+  clack.log.success('Created .codeviz/ directory');
 
   // Index the project with shimmer progress (worker thread for smooth animation)
   const { createShimmerProgress } = await import('../ui/shimmer-progress');

@@ -1,7 +1,7 @@
 /**
  * Sync Module
  *
- * Provides synchronization functionality for keeping the code graph
+ * Provides synchronization functionality for keeping CodeViz
  * up-to-date with file system changes.
  *
  * Components:
