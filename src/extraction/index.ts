@@ -526,8 +526,9 @@ export class ExtractionOrchestrator {
       });
 
       w.on('error', (err) => {
-        logWarn('Parse worker error', { error: err.message });
-        rejectAllPending(`Worker error: ${err.message}`);
+        const message = err instanceof Error ? err.message : String(err);
+        logWarn('Parse worker error', { error: message });
+        rejectAllPending(`Worker error: ${message}`);
       });
 
       w.on('exit', (code) => {
@@ -571,14 +572,13 @@ export class ExtractionOrchestrator {
      * Terminates the current worker and clears the reference so
      * ensureWorker() will spawn a fresh one on the next call.
      */
-    function recycleWorker(): void {
+    async function recycleWorker(): Promise<void> {
       if (!parseWorker) return;
       log(`Recycling worker after ${workerParseCount} parses (heap: ${Math.round(process.memoryUsage().rss / 1024 / 1024)}MB RSS)`);
       const w = parseWorker;
       parseWorker = null;
       workerParseCount = 0;
-      // Fire-and-forget: worker.terminate() can hang if WASM is stuck
-      w.terminate().catch(() => {});
+      await w.terminate().catch(() => {});
     }
 
     async function requestParse(filePath: string, content: string): Promise<ExtractionResult> {
@@ -620,7 +620,7 @@ export class ExtractionOrchestrator {
 
     for (let i = 0; i < files.length; i += FILE_IO_BATCH_SIZE) {
       if (signal?.aborted) {
-        if (parseWorker) (parseWorker as import('worker_threads').Worker).terminate().catch(() => {});
+        await recycleWorker();
         return {
           success: false,
           filesIndexed,
@@ -656,7 +656,7 @@ export class ExtractionOrchestrator {
       // Send to worker for parsing, store results on main thread
       for (const { filePath, content, stats, error } of fileContents) {
         if (signal?.aborted) {
-          if (parseWorker) (parseWorker as import('worker_threads').Worker).terminate().catch(() => {});
+          await recycleWorker();
           return {
             success: false,
             filesIndexed,
@@ -763,7 +763,7 @@ export class ExtractionOrchestrator {
         if (signal?.aborted) break;
 
         // Fresh worker for every retry — maximum WASM headroom
-        recycleWorker();
+        await recycleWorker();
 
         let content: string;
         try {
@@ -808,7 +808,7 @@ export class ExtractionOrchestrator {
           const filePath = errEntry.filePath!;
           if (signal?.aborted) break;
 
-          recycleWorker();
+          await recycleWorker();
 
           let fullContent: string;
           try {
@@ -852,9 +852,7 @@ export class ExtractionOrchestrator {
 
     // Shut down parse worker and clear any pending timers
     rejectAllPending('Indexing complete');
-    if (parseWorker) {
-      (parseWorker as import('worker_threads').Worker).terminate().catch(() => {});
-    }
+    await recycleWorker();
 
     return {
       success: filesIndexed > 0 || errors.filter((e) => e.severity === 'error').length === 0,

@@ -4,11 +4,11 @@
  * Watches the project directory for file changes and triggers
  * debounced sync operations to keep CodeViz up-to-date.
  *
- * Uses Node.js native fs.watch with recursive mode (macOS FSEvents,
- * Windows ReadDirectoryChangesW, Linux inotify on Node 19+).
+ * Uses Node.js native fs.watch with one watcher per directory.
  */
 
 import * as fs from 'fs';
+import * as path from 'path';
 import { CodeVizConfig } from '../types';
 import { shouldIncludeFile } from '../extraction';
 import { logDebug, logWarn } from '../errors';
@@ -47,7 +47,9 @@ export interface WatchOptions {
  * - Ignores .codeviz/ directory changes
  */
 export class FileWatcher {
-  private watcher: fs.FSWatcher | null = null;
+  private watchers = new Map<string, fs.FSWatcher>();
+  private pollTimer: ReturnType<typeof setInterval> | null = null;
+  private fileSnapshot = new Map<string, number>();
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
   private hasChanges = false;
   private syncing = false;
@@ -79,52 +81,21 @@ export class FileWatcher {
    * Returns true if watching started successfully, false otherwise.
    */
   start(): boolean {
-    if (this.watcher) return true; // Already watching
+    if (this.watchers.size > 0 || this.pollTimer) return true; // Already watching
     this.stopped = false;
 
-    try {
-      this.watcher = fs.watch(
-        this.projectRoot,
-        { recursive: true },
-        (_eventType, filename) => {
-          if (!filename || this.stopped) return;
-
-          // Normalize path separators
-          const normalized = normalizePath(filename);
-
-          // Ignore .codeviz/ directory changes (our own DB writes)
-          if (
-            normalized === '.codeviz' ||
-            normalized.startsWith('.codeviz/') ||
-            normalized.startsWith('.codeviz\\')
-          ) {
-            return;
-          }
-
-          // Filter against include/exclude patterns
-          if (!shouldIncludeFile(normalized, this.config)) {
-            return;
-          }
-
-          logDebug('File change detected', { file: normalized });
-          this.hasChanges = true;
-          this.scheduleSync();
-        }
-      );
-
-      // Handle watcher errors gracefully
-      this.watcher.on('error', (err) => {
-        logWarn('File watcher error', { error: String(err) });
-        // Don't crash — watcher may recover or user can restart
-      });
-
-      logDebug('File watcher started', { projectRoot: this.projectRoot, debounceMs: this.debounceMs });
+    if (this.shouldUsePolling()) {
+      this.startPolling();
+      logDebug('File watcher started with polling', { projectRoot: this.projectRoot, debounceMs: this.debounceMs });
       return true;
-    } catch (err) {
-      // Recursive watch not supported (e.g., Linux < Node 19)
-      logWarn('Could not start file watcher — recursive fs.watch not supported on this platform', { error: String(err) });
-      return false;
     }
+
+    const started = this.watchDirectoryRecursive(this.projectRoot);
+
+    if (started) {
+      logDebug('File watcher started', { projectRoot: this.projectRoot, debounceMs: this.debounceMs });
+    }
+    return started;
   }
 
   /**
@@ -138,10 +109,16 @@ export class FileWatcher {
       this.debounceTimer = null;
     }
 
-    if (this.watcher) {
-      this.watcher.close();
-      this.watcher = null;
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+      this.pollTimer = null;
     }
+    this.fileSnapshot.clear();
+
+    for (const watcher of this.watchers.values()) {
+      watcher.close();
+    }
+    this.watchers.clear();
 
     this.hasChanges = false;
     logDebug('File watcher stopped');
@@ -151,7 +128,161 @@ export class FileWatcher {
    * Whether the watcher is currently active.
    */
   isActive(): boolean {
-    return this.watcher !== null && !this.stopped;
+    return (this.watchers.size > 0 || this.pollTimer !== null) && !this.stopped;
+  }
+
+  private shouldUsePolling(): boolean {
+    const nodeMajor = parseInt(process.versions.node.split('.')[0] ?? '0', 10);
+    return nodeMajor === 25;
+  }
+
+  private startPolling(): void {
+    this.fileSnapshot = this.scanFiles();
+    this.pollTimer = setInterval(() => this.pollForChanges(), 100);
+  }
+
+  private pollForChanges(): void {
+    if (this.stopped) return;
+
+    const nextSnapshot = this.scanFiles();
+    let changedPath: string | undefined;
+
+    for (const [filePath, mtimeMs] of nextSnapshot) {
+      if (this.fileSnapshot.get(filePath) !== mtimeMs) {
+        changedPath = filePath;
+        break;
+      }
+    }
+
+    if (!changedPath) {
+      for (const filePath of this.fileSnapshot.keys()) {
+        if (!nextSnapshot.has(filePath)) {
+          changedPath = filePath;
+          break;
+        }
+      }
+    }
+
+    this.fileSnapshot = nextSnapshot;
+
+    if (changedPath) {
+      this.markChange(changedPath);
+    }
+  }
+
+  private scanFiles(): Map<string, number> {
+    const files = new Map<string, number>();
+    const visit = (dir: string) => {
+      if (this.shouldIgnoreDirectory(dir)) return;
+
+      let entries: fs.Dirent[];
+      try {
+        entries = fs.readdirSync(dir, { withFileTypes: true });
+      } catch {
+        return;
+      }
+
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          visit(fullPath);
+          continue;
+        }
+
+        const relative = normalizePath(path.relative(this.projectRoot, fullPath));
+        if (!shouldIncludeFile(relative, this.config)) {
+          continue;
+        }
+
+        try {
+          files.set(relative, fs.statSync(fullPath).mtimeMs);
+        } catch {
+          // The file may have disappeared during the scan.
+        }
+      }
+    };
+
+    visit(this.projectRoot);
+    return files;
+  }
+
+  private watchDirectoryRecursive(dir: string): boolean {
+    let started = false;
+    const visit = (currentDir: string) => {
+      if (this.stopped || this.watchers.has(currentDir) || this.shouldIgnoreDirectory(currentDir)) {
+        return;
+      }
+
+      try {
+        const watcher = fs.watch(currentDir, (_eventType, filename) => {
+          if (!filename || this.stopped) return;
+
+          const fullPath = path.join(currentDir, filename.toString());
+          if (fs.existsSync(fullPath)) {
+            try {
+              if (fs.statSync(fullPath).isDirectory()) {
+                this.watchDirectoryRecursive(fullPath);
+              }
+            } catch {
+              // The path may have disappeared between the event and stat.
+            }
+          }
+
+          this.handleChange(fullPath);
+        });
+
+        watcher.on('error', (err) => {
+          logWarn('File watcher error', { error: String(err) });
+          this.watchers.delete(currentDir);
+        });
+
+        this.watchers.set(currentDir, watcher);
+        started = true;
+      } catch (err) {
+        logWarn('Could not start file watcher for directory', { directory: currentDir, error: String(err) });
+        return;
+      }
+
+      for (const entry of fs.readdirSync(currentDir, { withFileTypes: true })) {
+        if (entry.isDirectory()) {
+          visit(path.join(currentDir, entry.name));
+        }
+      }
+    };
+
+    visit(dir);
+    return started;
+  }
+
+  private shouldIgnoreDirectory(dir: string): boolean {
+    const relative = normalizePath(path.relative(this.projectRoot, dir));
+    if (!relative) return false;
+    if (relative === '.codeviz' || relative.startsWith('.codeviz/')) return true;
+    return !shouldIncludeFile(`${relative}/__codeviz_watch__.ts`, this.config);
+  }
+
+  private markChange(normalized: string): void {
+    // Ignore .codeviz/ directory changes (our own DB writes)
+    if (
+      normalized === '.codeviz' ||
+      normalized.startsWith('.codeviz/') ||
+      normalized.startsWith('.codeviz\\')
+    ) {
+      return;
+    }
+
+    // Filter against include/exclude patterns
+    if (!shouldIncludeFile(normalized, this.config)) {
+      return;
+    }
+
+    logDebug('File change detected', { file: normalized });
+    this.hasChanges = true;
+    this.scheduleSync();
+  }
+
+  private handleChange(fullPath: string): void {
+    this.markChange(normalizePath(path.relative(this.projectRoot, fullPath)));
   }
 
   /**

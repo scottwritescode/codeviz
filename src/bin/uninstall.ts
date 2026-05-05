@@ -2,7 +2,7 @@
 /**
  * CodeViz preuninstall cleanup script
  *
- * Runs automatically when `npm uninstall -g @colbymchenry/codeviz` is called.
+ * Runs automatically when `npm uninstall -g @scottwritescode/codeviz` is called.
  * Removes all CodeViz configuration from Claude Code:
  *   - MCP server entry from ~/.claude.json
  *   - Permissions from ~/.claude/settings.json

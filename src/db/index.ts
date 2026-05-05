@@ -148,6 +148,7 @@ export class DatabaseConnection {
    * Optimize database (vacuum and analyze)
    */
   optimize(): void {
+    this.db.releaseStatements?.();
     this.db.exec('VACUUM');
     this.db.exec('ANALYZE');
   }
@@ -156,6 +157,7 @@ export class DatabaseConnection {
    * Close the database connection
    */
   close(): void {
+    if (!this.db.open) return;
     this.db.close();
   }
 

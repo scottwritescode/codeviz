@@ -327,6 +327,7 @@ export class CodeViz {
     this.unwatch();
     // Release file lock if held
     this.fileLock.release();
+    this.queries.releasePreparedStatements();
     this.db.close();
   }
 
@@ -940,6 +941,7 @@ export class CodeViz {
    * Optimize the database (vacuum and analyze)
    */
   optimize(): void {
+    this.queries.releasePreparedStatements();
     this.db.optimize();
   }
 

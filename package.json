@@ -1,5 +1,5 @@
 {
-  "name": "@colbymchenry/codeviz",
+  "name": "@scottwritescode/codeviz",
   "version": "0.7.2",
   "description": "Supercharge Claude Code with semantic code intelligence. 94% fewer tool calls • 77% faster exploration • 100% local.",
   "main": "dist/index.js",
@@ -41,15 +41,15 @@
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.0",
-    "@types/node": "^20.19.30",
+    "@types/node": "^25.6.0",
     "@types/picomatch": "^4.0.2",
     "typescript": "^5.0.0",
     "vitest": "^2.1.9"
   },
   "optionalDependencies": {
-    "better-sqlite3": "^11.0.0"
+    "better-sqlite3": "^12.9.0"
   },
   "engines": {
-    "node": ">=18.0.0 <25.0.0"
+    "node": ">=25.9.0 <26.0.0"
   }
 }

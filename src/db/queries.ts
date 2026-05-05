@@ -1295,4 +1295,17 @@ export class QueryBuilder {
       this.db.exec('DELETE FROM files');
     })();
   }
+
+  /**
+   * Release cached prepared statements.
+   *
+   * This is a no-op for native better-sqlite3 statements, but the WASM
+   * fallback needs statements finalized before VACUUM or close.
+   */
+  releasePreparedStatements(): void {
+    for (const stmt of Object.values(this.stmts)) {
+      stmt?.finalize?.();
+    }
+    this.stmts = {};
+  }
 }

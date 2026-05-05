@@ -6,7 +6,7 @@
 
 **94% fewer tool calls · 77% faster exploration · 100% local**
 
-[![npm version](https://img.shields.io/npm/v/@colbymchenry/codeviz.svg)](https://www.npmjs.com/package/@colbymchenry/codeviz)
+[![npm version](https://img.shields.io/npm/v/@scottwritescode/codeviz.svg)](https://www.npmjs.com/package/@scottwritescode/codeviz)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
 
@@ -19,7 +19,7 @@
 ### Get Started
 
 ```bash
-npx @colbymchenry/codeviz
+npx @scottwritescode/codeviz
 ```
 
 <sub>Interactive installer configures Claude Code automatically</sub>
@@ -42,14 +42,14 @@ Tested across 6 real-world codebases comparing Claude Code's Explore agent **wit
 
 > **Average: 92% fewer tool calls · 71% faster**
 
-| Codebase | With CG | Without CG | Improvement |
-|----------|---------|------------|-------------|
-| **VS Code** · TypeScript | 3 calls, 17s | 52 calls, 1m 37s | **94% fewer · 82% faster** |
-| **Excalidraw** · TypeScript | 3 calls, 29s | 47 calls, 1m 45s | **94% fewer · 72% faster** |
-| **Claude Code** · Python + Rust | 3 calls, 39s | 40 calls, 1m 8s | **93% fewer · 43% faster** |
-| **Claude Code** · Java | 1 call, 19s | 26 calls, 1m 22s | **96% fewer · 77% faster** |
-| **Alamofire** · Swift | 3 calls, 22s | 32 calls, 1m 39s | **91% fewer · 78% faster** |
-| **Swift Compiler** · Swift/C++ | 6 calls, 35s | 37 calls, 2m 8s | **84% fewer · 73% faster** |
+| Codebase                        | With CG      | Without CG       | Improvement                |
+|---------------------------------|--------------|------------------|----------------------------|
+| **VS Code** · TypeScript        | 3 calls, 17s | 52 calls, 1m 37s | **94% fewer · 82% faster** |
+| **Excalidraw** · TypeScript     | 3 calls, 29s | 47 calls, 1m 45s | **94% fewer · 72% faster** |
+| **Claude Code** · Python + Rust | 3 calls, 39s | 40 calls, 1m 8s  | **93% fewer · 43% faster** |
+| **Claude Code** · Java          | 1 call, 19s  | 26 calls, 1m 22s | **96% fewer · 77% faster** |
+| **Alamofire** · Swift           | 3 calls, 22s | 32 calls, 1m 39s | **91% fewer · 78% faster** |
+| **Swift Compiler** · Swift/C++  | 6 calls, 35s | 37 calls, 2m 8s  | **84% fewer · 73% faster** |
 
 <details>
 <summary><strong>Full benchmark details</strong></summary>
@@ -57,34 +57,34 @@ Tested across 6 real-world codebases comparing Claude Code's Explore agent **wit
 All tests used Claude Opus 4.6 (1M context) with Claude Code v2.1.91. Each test spawned a single Explore agent with the same question.
 
 **Queries used:**
-| Codebase | Query |
-|----------|-------|
-| VS Code | "How does the extension host communicate with the main process?" |
-| Excalidraw | "How does collaborative editing and real-time sync work?" |
-| Claude Code (Python+Rust) | "How does tool execution work end to end?" |
-| Claude Code (Java) | "How does tool execution work end to end?" |
-| Alamofire | "Trace how a request flows from Session.request() through to the URLSession layer" |
-| Swift Compiler | "How does the Swift compiler handle error diagnostics?" |
+| Codebase                  | Query                                                                              |
+|---------------------------|------------------------------------------------------------------------------------|
+| VS Code                   | "How does the extension host communicate with the main process?"                   |
+| Excalidraw                | "How does collaborative editing and real-time sync work?"                          |
+| Claude Code (Python+Rust) | "How does tool execution work end to end?"                                         |
+| Claude Code (Java)        | "How does tool execution work end to end?"                                         |
+| Alamofire                 | "Trace how a request flows from Session.request() through to the URLSession layer" |
+| Swift Compiler            | "How does the Swift compiler handle error diagnostics?"                            |
 
 **With CodeViz — the agent uses `codeviz_explore` and stops:**
-| Codebase | Files Indexed | Nodes | Tool Uses | Tokens | Time | File Reads |
-|----------|--------------|-------|-----------|--------|------|------------|
-| VS Code (TypeScript) | 4,002 | 59,377 | 3 | 56.6k | 17s | 0 |
-| Excalidraw (TypeScript) | 626 | 9,859 | 3 | 57.1k | 29s | 0 |
-| Claude Code (Python+Rust) | 115 | 3,080 | 3 | 67.1k | 39s | 0 |
-| Claude Code (Java) | — | — | 1 | 40.8k | 19s | 0 |
-| Alamofire (Swift) | 102 | 2,624 | 3 | 57.3k | 22s | 0 |
-| Swift Compiler (Swift/C++) | 25,874 | 272,898 | 6 | 77.4k | 35s | 0 |
+| Codebase                   | Files Indexed | Nodes   | Tool Uses | Tokens | Time | File Reads |
+|----------------------------|---------------|---------|-----------|--------|------|------------|
+| VS Code (TypeScript)       | 4,002         | 59,377  | 3         | 56.6k  | 17s  | 0          |
+| Excalidraw (TypeScript)    | 626           | 9,859   | 3         | 57.1k  | 29s  | 0          |
+| Claude Code (Python+Rust)  | 115           | 3,080   | 3         | 67.1k  | 39s  | 0          |
+| Claude Code (Java)         | —             | —       | 1         | 40.8k  | 19s  | 0          |
+| Alamofire (Swift)          | 102           | 2,624   | 3         | 57.3k  | 22s  | 0          |
+| Swift Compiler (Swift/C++) | 25,874        | 272,898 | 6         | 77.4k  | 35s  | 0          |
 
 **Without CodeViz — the agent uses grep, find, ls, and Read extensively:**
-| Codebase | Tool Uses | Tokens | Time | File Reads |
-|----------|-----------|--------|------|------------|
-| VS Code (TypeScript) | 52 | 89.4k | 1m 37s | ~15 |
-| Excalidraw (TypeScript) | 47 | 77.9k | 1m 45s | ~20 |
-| Claude Code (Python+Rust) | 40 | 69.3k | 1m 8s | ~15 |
-| Claude Code (Java) | 26 | 73.3k | 1m 22s | ~15 |
-| Alamofire (Swift) | 32 | 52.4k | 1m 39s | ~10 |
-| Swift Compiler (Swift/C++) | 37 | 99.1k | 2m 8s | ~20 |
+| Codebase                   | Tool Uses | Tokens | Time   | File Reads |
+|----------------------------|-----------|--------|--------|------------|
+| VS Code (TypeScript)       | 52        | 89.4k  | 1m 37s | ~15        |
+| Excalidraw (TypeScript)    | 47        | 77.9k  | 1m 45s | ~20        |
+| Claude Code (Python+Rust)  | 40        | 69.3k  | 1m 8s  | ~15        |
+| Claude Code (Java)         | 26        | 73.3k  | 1m 22s | ~15        |
+| Alamofire (Swift)          | 32        | 52.4k  | 1m 39s | ~10        |
+| Swift Compiler (Swift/C++) | 37        | 99.1k  | 2m 8s  | ~20        |
 
 **Key observations:**
 - With CodeViz, the agent **never fell back to reading files** — it trusted the codeviz_explore results completely
@@ -100,14 +100,14 @@ All tests used Claude Opus 4.6 (1M context) with Claude Code v2.1.91. Each test 
 
 ## Key Features
 
-| | |
-|---|---|
-| **Smart Context Building** | One tool call returns entry points, related symbols, and code snippets — no expensive exploration agents |
-| **Full-Text Search** | Find code by name instantly across your entire codebase, powered by FTS5 |
-| **Impact Analysis** | Trace callers, callees, and the full impact radius of any symbol before making changes |
-| **Always Fresh** | File watcher uses native OS events (FSEvents/inotify/ReadDirectoryChangesW) with debounced auto-sync — the graph stays current as you code, zero config |
-| **19+ Languages** | TypeScript, JavaScript, Python, Go, Rust, Java, C#, PHP, Ruby, C, C++, Swift, Kotlin, Dart, Svelte, Liquid, Pascal/Delphi |
-| **100% Local** | No data leaves your machine. No API keys. No external services. SQLite database only |
+|                            |                                                                                                                                                         |
+|----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Smart Context Building** | One tool call returns entry points, related symbols, and code snippets — no expensive exploration agents                                                |
+| **Full-Text Search**       | Find code by name instantly across your entire codebase, powered by FTS5                                                                                |
+| **Impact Analysis**        | Trace callers, callees, and the full impact radius of any symbol before making changes                                                                  |
+| **Always Fresh**           | File watcher uses native OS events (FSEvents/inotify/ReadDirectoryChangesW) with debounced auto-sync — the graph stays current as you code, zero config |
+| **19+ Languages**          | TypeScript, JavaScript, Python, Go, Rust, Java, C#, PHP, Ruby, C, C++, Swift, Kotlin, Dart, Svelte, Liquid, Pascal/Delphi                               |
+| **100% Local**             | No data leaves your machine. No API keys. No external services. SQLite database only                                                                    |
 
 ---
 
@@ -116,7 +116,7 @@ All tests used Claude Opus 4.6 (1M context) with Claude Code v2.1.91. Each test 
 ### 1. Run the Installer
 
 ```bash
-npx @colbymchenry/codeviz
+npx @scottwritescode/codeviz
 ```
 
 The installer will:
@@ -144,7 +144,7 @@ That's it! Claude Code will use CodeViz tools automatically when a `.codeviz/` d
 
 **Install globally:**
 ```bash
-npm install -g @colbymchenry/codeviz
+npm install -g @scottwritescode/codeviz
 ```
 
 **Add to `~/.claude.json`:**
@@ -205,12 +205,12 @@ CodeViz builds a semantic knowledge graph of codebases for faster, smarter code 
 
 **The main session may only use these lightweight tools directly** (for targeted lookups before making edits, not for exploration):
 
-| Tool | Use For |
-|------|---------|
-| `codeviz_search` | Find symbols by name |
-| `codeviz_callers` / `codeviz_callees` | Trace call flow |
-| `codeviz_impact` | Check what's affected before editing |
-| `codeviz_node` | Get a single symbol's details |
+| Tool                                  | Use For                              |
+|---------------------------------------|--------------------------------------|
+| `codeviz_search`                      | Find symbols by name                 |
+| `codeviz_callers` / `codeviz_callees` | Trace call flow                      |
+| `codeviz_impact`                      | Check what's affected before editing |
+| `codeviz_node`                        | Get a single symbol's details        |
 
 ### If `.codeviz/` does NOT exist
 
@@ -294,13 +294,13 @@ git diff --name-only | codeviz affected --stdin   # Pipe from git diff
 codeviz affected src/auth.ts --filter "e2e/*"     # Custom test file pattern
 ```
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--stdin` | Read file list from stdin | `false` |
-| `-d, --depth <n>` | Max dependency traversal depth | `5` |
+| Option                | Description                        | Default     |
+|-----------------------|------------------------------------|-------------|
+| `--stdin`             | Read file list from stdin          | `false`     |
+| `-d, --depth <n>`     | Max dependency traversal depth     | `5`         |
 | `-f, --filter <glob>` | Custom glob to identify test files | auto-detect |
-| `-j, --json` | Output as JSON | `false` |
-| `-q, --quiet` | Output file paths only | `false` |
+| `-j, --json`          | Output as JSON                     | `false`     |
+| `-q, --quiet`         | Output file paths only             | `false`     |
 
 **CI/hook example:**
 
@@ -318,23 +318,23 @@ fi
 
 When running as an MCP server, CodeViz exposes these tools to Claude Code:
 
-| Tool | Purpose |
-|------|---------|
-| `codeviz_search` | Find symbols by name across the codebase |
-| `codeviz_context` | Build relevant code context for a task |
-| `codeviz_callers` | Find what calls a function |
-| `codeviz_callees` | Find what a function calls |
-| `codeviz_impact` | Analyze what code is affected by changing a symbol |
-| `codeviz_node` | Get details about a specific symbol (optionally with source code) |
-| `codeviz_files` | Get indexed file structure (faster than filesystem scanning) |
-| `codeviz_status` | Check index health and statistics |
+| Tool              | Purpose                                                           |
+|-------------------|-------------------------------------------------------------------|
+| `codeviz_search`  | Find symbols by name across the codebase                          |
+| `codeviz_context` | Build relevant code context for a task                            |
+| `codeviz_callers` | Find what calls a function                                        |
+| `codeviz_callees` | Find what a function calls                                        |
+| `codeviz_impact`  | Analyze what code is affected by changing a symbol                |
+| `codeviz_node`    | Get details about a specific symbol (optionally with source code) |
+| `codeviz_files`   | Get indexed file structure (faster than filesystem scanning)      |
+| `codeviz_status`  | Check index health and statistics                                 |
 
 ---
 
 ## Library Usage
 
 ```typescript
-import CodeViz from '@colbymchenry/codeviz';
+import CodeViz from '@scottwritescode/codeviz';
 
 const cg = await CodeViz.init('/path/to/project');
 // Or: const cg = await CodeViz.open('/path/to/project');
@@ -371,35 +371,35 @@ The `.codeviz/config.json` file controls indexing:
 }
 ```
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `languages` | Languages to index (auto-detected if empty) | `[]` |
-| `exclude` | Glob patterns to ignore | `["node_modules/**", ...]` |
-| `frameworks` | Framework hints for better resolution | `[]` |
-| `maxFileSize` | Skip files larger than this (bytes) | `1048576` (1MB) |
-| `extractDocstrings` | Extract docstrings from code | `true` |
-| `trackCallSites` | Track call site locations | `true` |
+| Option              | Description                                 | Default                    |
+|---------------------|---------------------------------------------|----------------------------|
+| `languages`         | Languages to index (auto-detected if empty) | `[]`                       |
+| `exclude`           | Glob patterns to ignore                     | `["node_modules/**", ...]` |
+| `frameworks`        | Framework hints for better resolution       | `[]`                       |
+| `maxFileSize`       | Skip files larger than this (bytes)         | `1048576` (1MB)            |
+| `extractDocstrings` | Extract docstrings from code                | `true`                     |
+| `trackCallSites`    | Track call site locations                   | `true`                     |
 
 ## Supported Languages
 
-| Language | Extension | Status |
-|----------|-----------|--------|
-| TypeScript | `.ts`, `.tsx` | Full support |
-| JavaScript | `.js`, `.jsx`, `.mjs` | Full support |
-| Python | `.py` | Full support |
-| Go | `.go` | Full support |
-| Rust | `.rs` | Full support |
-| Java | `.java` | Full support |
-| C# | `.cs` | Full support |
-| PHP | `.php` | Full support |
-| Ruby | `.rb` | Full support |
-| C | `.c`, `.h` | Full support |
-| C++ | `.cpp`, `.hpp`, `.cc` | Full support |
-| Swift | `.swift` | Full support |
-| Kotlin | `.kt`, `.kts` | Full support |
-| Dart | `.dart` | Full support |
-| Svelte | `.svelte` | Full support (script extraction, Svelte 5 runes, SvelteKit routes) |
-| Liquid | `.liquid` | Full support |
+| Language        | Extension                      | Status                                                                 |
+|-----------------|--------------------------------|------------------------------------------------------------------------|
+| TypeScript      | `.ts`, `.tsx`                  | Full support                                                           |
+| JavaScript      | `.js`, `.jsx`, `.mjs`          | Full support                                                           |
+| Python          | `.py`                          | Full support                                                           |
+| Go              | `.go`                          | Full support                                                           |
+| Rust            | `.rs`                          | Full support                                                           |
+| Java            | `.java`                        | Full support                                                           |
+| C#              | `.cs`                          | Full support                                                           |
+| PHP             | `.php`                         | Full support                                                           |
+| Ruby            | `.rb`                          | Full support                                                           |
+| C               | `.c`, `.h`                     | Full support                                                           |
+| C++             | `.cpp`, `.hpp`, `.cc`          | Full support                                                           |
+| Swift           | `.swift`                       | Full support                                                           |
+| Kotlin          | `.kt`, `.kts`                  | Full support                                                           |
+| Dart            | `.dart`                        | Full support                                                           |
+| Svelte          | `.svelte`                      | Full support (script extraction, Svelte 5 runes, SvelteKit routes)     |
+| Liquid          | `.liquid`                      | Full support                                                           |
 | Pascal / Delphi | `.pas`, `.dpr`, `.dpk`, `.lpr` | Full support (classes, records, interfaces, enums, DFM/FMX form files) |
 
 ## Troubleshooting

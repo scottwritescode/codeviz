@@ -9,6 +9,7 @@ export interface SqliteStatement {
   run(...params: any[]): { changes: number; lastInsertRowid: number | bigint };
   get(...params: any[]): any;
   all(...params: any[]): any[];
+  finalize?(): void;
 }
 
 export interface SqliteDatabase {
@@ -16,6 +17,7 @@ export interface SqliteDatabase {
   exec(sql: string): void;
   pragma(str: string): any;
   transaction<T>(fn: (...args: any[]) => T): (...args: any[]) => T;
+  releaseStatements?(): void;
   close(): void;
   readonly open: boolean;
 }
@@ -96,13 +98,21 @@ class WasmDatabaseAdapter implements SqliteDatabase {
   }
 
   get open(): boolean {
-    return this._db.isOpen;
+    return Boolean(this._db?.isOpen);
   }
 
   prepare(sql: string): SqliteStatement {
     const { sql: rewrittenSql, paramOrder } = translateNamedParams(sql);
     const stmt = this._db.prepare(rewrittenSql);
     this._openStmts.add(stmt);
+    let finalized = false;
+    const finalize = () => {
+      if (finalized) return;
+      finalized = true;
+      this._openStmts.delete(stmt);
+      try { stmt.finalize(); } catch { /* already finalized */ }
+    };
+
     return {
       run(...params: any[]) {
         const resolved = resolveParams(params, paramOrder);
@@ -120,6 +130,7 @@ class WasmDatabaseAdapter implements SqliteDatabase {
         const resolved = resolveParams(params, paramOrder);
         return resolved !== undefined ? stmt.all(resolved) : stmt.all();
       },
+      finalize,
     };
   }
 
@@ -178,14 +189,20 @@ class WasmDatabaseAdapter implements SqliteDatabase {
     };
   }
 
-  close(): void {
-    // Finalize all tracked statements before closing.
-    // node-sqlite3-wasm won't release its directory-based file lock
-    // if any prepared statements remain open.
-    for (const stmt of this._openStmts) {
+  releaseStatements(): void {
+    for (const stmt of [...this._openStmts]) {
       try { stmt.finalize(); } catch { /* already finalized */ }
     }
     this._openStmts.clear();
+  }
+
+  close(): void {
+    if (!this.open) return;
+
+    // Finalize all tracked statements before closing.
+    // node-sqlite3-wasm won't release its directory-based file lock
+    // if any prepared statements remain open.
+    this.releaseStatements();
     this._db.close();
   }
 }

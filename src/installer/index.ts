@@ -63,11 +63,11 @@ export async function runInstaller(): Promise<void> {
     const s = clack.spinner();
     s.start('Installing codeviz globally...');
     try {
-      execSync('npm install -g @colbymchenry/codeviz', { stdio: 'pipe' });
+      execSync('npm install -g @scottwritescode/codeviz', { stdio: 'pipe' });
       s.stop('Installed codeviz globally');
     } catch {
       s.stop('Could not install globally (permission denied)');
-      clack.log.warn('Try: sudo npm install -g @colbymchenry/codeviz');
+      clack.log.warn('Try: sudo npm install -g @scottwritescode/codeviz');
     }
   } else {
     clack.log.info('Skipped global install — MCP server may not work without it');
