@@ -1,39 +1,39 @@
 #!/usr/bin/env node
 /**
- * CodeGraph CLI
+ * CodeViz CLI
  *
- * Command-line interface for CodeGraph code intelligence.
+ * Command-line interface for CodeViz code intelligence.
  *
  * Usage:
- *   codegraph                    Run interactive installer (when no args)
- *   codegraph install            Run interactive installer
- *   codegraph init [path]        Initialize CodeGraph in a project
- *   codegraph uninit [path]      Remove CodeGraph from a project
- *   codegraph index [path]       Index all files in the project
- *   codegraph sync [path]        Sync changes since last index
- *   codegraph status [path]      Show index status
- *   codegraph query <search>     Search for symbols
- *   codegraph files [options]    Show project file structure
- *   codegraph context <task>     Build context for a task
- *   codegraph affected [files]   Find test files affected by changes
+ *   codeviz                    Run interactive installer (when no args)
+ *   codeviz install            Run interactive installer
+ *   codeviz init [path]        Initialize CodeViz in a project
+ *   codeviz uninit [path]      Remove CodeViz from a project
+ *   codeviz index [path]       Index all files in the project
+ *   codeviz sync [path]        Sync changes since last index
+ *   codeviz status [path]      Show index status
+ *   codeviz query <search>     Search for symbols
+ *   codeviz files [options]    Show project file structure
+ *   codeviz context <task>     Build context for a task
+ *   codeviz affected [files]   Find test files affected by changes
  */
 
 import { Command } from 'commander';
 import * as path from 'path';
 import * as fs from 'fs';
-import { getCodeGraphDir, isInitialized } from '../directory';
+import { getCodeVizDir, isInitialized } from '../directory';
 import { createShimmerProgress } from '../ui/shimmer-progress';
 
-// Lazy-load heavy modules (CodeGraph, runInstaller) to keep CLI startup fast.
-async function loadCodeGraph(): Promise<typeof import('../index')> {
+// Lazy-load heavy modules (CodeViz, runInstaller) to keep CLI startup fast.
+async function loadCodeViz(): Promise<typeof import('../index')> {
   try {
     return await import('../index');
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error('\x1b[31m✗\x1b[0m Failed to load CodeGraph modules.');
+    console.error('\x1b[31m✗\x1b[0m Failed to load CodeViz modules.');
     console.error(`\n  Node: ${process.version}  Platform: ${process.platform} ${process.arch}`);
     console.error(`\n  Error: ${msg}`);
-    console.error('\n  Try reinstalling with: npm install -g @colbymchenry/codegraph\n');
+    console.error('\n  Try reinstalling with: npm install -g @colbymchenry/codeviz\n');
     process.exit(1);
   }
 }
@@ -49,14 +49,14 @@ const nodeVersion = process.versions.node;
 const nodeMajor = parseInt(nodeVersion.split('.')[0] ?? '0', 10);
 if (nodeMajor >= 25) {
   console.warn(
-    '\x1b[33m⚠\x1b[0m  CodeGraph may crash on Node.js %s due to a V8 WASM compiler bug in Node 25+.',
+    '\x1b[33m⚠\x1b[0m  CodeViz may crash on Node.js %s due to a V8 WASM compiler bug in Node 25+.',
     nodeVersion
   );
   console.warn(
     '   Please use Node.js 22 LTS instead: https://nodejs.org/en/download'
   );
   console.warn(
-    '   See: https://github.com/colbymchenry/codegraph/issues/81\n'
+    '   See: https://github.com/colbymchenry/codeviz/issues/81\n'
   );
 }
 
@@ -74,11 +74,11 @@ if (process.argv.length === 2) {
 }
 
 process.on('uncaughtException', (error) => {
-  console.error('[CodeGraph] Uncaught exception:', error);
+  console.error('[CodeViz] Uncaught exception:', error);
 });
 
 process.on('unhandledRejection', (reason) => {
-  console.error('[CodeGraph] Unhandled rejection:', reason);
+  console.error('[CodeViz] Unhandled rejection:', reason);
 });
 
 function main() {
@@ -120,7 +120,7 @@ const chalk = {
 };
 
 program
-  .name('codegraph')
+  .name('codeviz')
   .description('Code intelligence and knowledge graph for any codebase')
   .version(packageJson.version);
 
@@ -130,19 +130,19 @@ program
 
 /**
  * Resolve project path from argument or current directory
- * Walks up parent directories to find nearest initialized CodeGraph project
- * (must have .codegraph/codegraph.db, not just .codegraph/lessons.db)
+ * Walks up parent directories to find nearest initialized CodeViz project
+ * (must have .codeviz/codeviz.db, not just .codeviz/lessons.db)
  */
 function resolveProjectPath(pathArg?: string): string {
   const absolutePath = path.resolve(pathArg || process.cwd());
 
-  // If exact path is initialized (has codegraph.db), use it
+  // If exact path is initialized (has codeviz.db), use it
   if (isInitialized(absolutePath)) {
     return absolutePath;
   }
 
-  // Walk up to find nearest parent with CodeGraph initialized
-  // Note: findNearestCodeGraphRoot finds any .codegraph folder, but we need one with codegraph.db
+  // Walk up to find nearest parent with CodeViz initialized
+  // Note: findNearestCodeVizRoot finds any .codeviz folder, but we need one with codeviz.db
   let current = absolutePath;
   const root = path.parse(current).root;
 
@@ -303,14 +303,14 @@ function printIndexResult(clack: typeof import('@clack/prompts'), result: IndexR
 
     if (projectPath) {
       writeErrorLog(projectPath, result.errors);
-      clack.log.info('See .codegraph/errors.log for details');
+      clack.log.info('See .codeviz/errors.log for details');
     }
 
     if (result.filesIndexed > 0) {
       clack.log.info('The index is fully usable — only the failed files are missing.');
     }
   } else if (projectPath) {
-    const logPath = path.join(projectPath, '.codegraph', 'errors.log');
+    const logPath = path.join(projectPath, '.codeviz', 'errors.log');
     if (fs.existsSync(logPath)) {
       fs.unlinkSync(logPath);
     }
@@ -318,10 +318,10 @@ function printIndexResult(clack: typeof import('@clack/prompts'), result: IndexR
 }
 
 /**
- * Write detailed error log to .codegraph/errors.log
+ * Write detailed error log to .codeviz/errors.log
  */
 function writeErrorLog(projectPath: string, errors: Array<{ message: string; filePath?: string; severity: string; code?: string }>): void {
-  const cgDir = path.join(projectPath, '.codegraph');
+  const cgDir = path.join(projectPath, '.codeviz');
   if (!fs.existsSync(cgDir)) return;
 
   const logPath = path.join(cgDir, 'errors.log');
@@ -345,7 +345,7 @@ function writeErrorLog(projectPath: string, errors: Array<{ message: string; fil
   }
 
   const lines: string[] = [
-    `CodeGraph Error Log — ${new Date().toISOString()}`,
+    `CodeViz Error Log — ${new Date().toISOString()}`,
     `${errorsByFile.size} files with errors`,
     '',
   ];
@@ -368,29 +368,29 @@ function writeErrorLog(projectPath: string, errors: Array<{ message: string; fil
 // =============================================================================
 
 /**
- * codegraph init [path]
+ * codeviz init [path]
  */
 program
   .command('init [path]')
-  .description('Initialize CodeGraph in a project directory')
+  .description('Initialize CodeViz in a project directory')
   .option('-i, --index', 'Run initial indexing after initialization')
   .option('-v, --verbose', 'Show detailed worker lifecycle and memory info')
   .action(async (pathArg: string | undefined, options: { index?: boolean; verbose?: boolean }) => {
     const projectPath = path.resolve(pathArg || process.cwd());
     const clack = await importESM('@clack/prompts');
 
-    clack.intro('Initializing CodeGraph');
+    clack.intro('Initializing CodeViz');
 
     try {
       if (isInitialized(projectPath)) {
         clack.log.warn(`Already initialized in ${projectPath}`);
-        clack.log.info('Use "codegraph index" to re-index or "codegraph sync" to update');
+        clack.log.info('Use "codeviz index" to re-index or "codeviz sync" to update');
         clack.outro('');
         return;
       }
 
-      const { default: CodeGraph } = await loadCodeGraph();
-      const cg = await CodeGraph.init(projectPath, { index: false });
+      const { default: CodeViz } = await loadCodeViz();
+      const cg = await CodeViz.init(projectPath, { index: false });
       clack.log.success(`Initialized in ${projectPath}`);
 
       if (options.index) {
@@ -412,7 +412,7 @@ program
 
         printIndexResult(clack, result, projectPath);
       } else {
-        clack.log.info('Run "codegraph index" to index the project');
+        clack.log.info('Run "codeviz index" to index the project');
       }
 
       clack.outro('Done');
@@ -424,18 +424,18 @@ program
   });
 
 /**
- * codegraph uninit [path]
+ * codeviz uninit [path]
  */
 program
   .command('uninit [path]')
-  .description('Remove CodeGraph from a project (deletes .codegraph/ directory)')
+  .description('Remove CodeViz from a project (deletes .codeviz/ directory)')
   .option('-f, --force', 'Skip confirmation prompt')
   .action(async (pathArg: string | undefined, options: { force?: boolean }) => {
     const projectPath = resolveProjectPath(pathArg);
 
     try {
       if (!isInitialized(projectPath)) {
-        warn(`CodeGraph is not initialized in ${projectPath}`);
+        warn(`CodeViz is not initialized in ${projectPath}`);
         return;
       }
 
@@ -445,7 +445,7 @@ program
         const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
         const answer = await new Promise<string>((resolve) => {
           rl.question(
-            chalk.yellow('⚠ This will permanently delete all CodeGraph data. Continue? (y/N) '),
+            chalk.yellow('⚠ This will permanently delete all CodeViz data. Continue? (y/N) '),
             resolve
           );
         });
@@ -457,11 +457,11 @@ program
         }
       }
 
-      const { default: CodeGraph } = await loadCodeGraph();
-      const cg = CodeGraph.openSync(projectPath);
+      const { default: CodeViz } = await loadCodeViz();
+      const cg = CodeViz.openSync(projectPath);
       cg.uninitialize();
 
-      success(`Removed CodeGraph from ${projectPath}`);
+      success(`Removed CodeViz from ${projectPath}`);
     } catch (err) {
       error(`Failed to uninitialize: ${err instanceof Error ? err.message : String(err)}`);
       process.exit(1);
@@ -469,7 +469,7 @@ program
   });
 
 /**
- * codegraph index [path]
+ * codeviz index [path]
  */
 program
   .command('index [path]')
@@ -482,13 +482,13 @@ program
 
     try {
       if (!isInitialized(projectPath)) {
-        error(`CodeGraph not initialized in ${projectPath}`);
-        info('Run "codegraph init" first');
+        error(`CodeViz not initialized in ${projectPath}`);
+        info('Run "codeviz init" first');
         process.exit(1);
       }
 
-      const { default: CodeGraph } = await loadCodeGraph();
-      const cg = await CodeGraph.open(projectPath);
+      const { default: CodeViz } = await loadCodeViz();
+      const cg = await CodeViz.open(projectPath);
 
       if (options.quiet) {
         // Quiet mode: no UI, just run
@@ -538,7 +538,7 @@ program
   });
 
 /**
- * codegraph sync [path]
+ * codeviz sync [path]
  */
 program
   .command('sync [path]')
@@ -550,13 +550,13 @@ program
     try {
       if (!isInitialized(projectPath)) {
         if (!options.quiet) {
-          error(`CodeGraph not initialized in ${projectPath}`);
+          error(`CodeViz not initialized in ${projectPath}`);
         }
         process.exit(1);
       }
 
-      const { default: CodeGraph } = await loadCodeGraph();
-      const cg = await CodeGraph.open(projectPath);
+      const { default: CodeViz } = await loadCodeViz();
+      const cg = await CodeViz.open(projectPath);
 
       if (options.quiet) {
         await cg.sync();
@@ -565,7 +565,7 @@ program
       }
 
       const clack = await importESM('@clack/prompts');
-      clack.intro('Syncing CodeGraph');
+      clack.intro('Syncing CodeViz');
 
       process.stdout.write(`${colors.dim}│${colors.reset}\n`);
       const progress = createShimmerProgress();
@@ -600,7 +600,7 @@ program
   });
 
 /**
- * codegraph status [path]
+ * codeviz status [path]
  */
 program
   .command('status [path]')
@@ -615,15 +615,15 @@ program
           console.log(JSON.stringify({ initialized: false, projectPath }));
           return;
         }
-        console.log(chalk.bold('\nCodeGraph Status\n'));
+        console.log(chalk.bold('\nCodeViz Status\n'));
         info(`Project: ${projectPath}`);
         warn('Not initialized');
-        info('Run "codegraph init" to initialize');
+        info('Run "codeviz init" to initialize');
         return;
       }
 
-      const { default: CodeGraph } = await loadCodeGraph();
-      const cg = await CodeGraph.open(projectPath);
+      const { default: CodeViz } = await loadCodeViz();
+      const cg = await CodeViz.open(projectPath);
       const stats = cg.getStats();
       const changes = cg.getChangedFiles();
 
@@ -648,7 +648,7 @@ program
         return;
       }
 
-      console.log(chalk.bold('\nCodeGraph Status\n'));
+      console.log(chalk.bold('\nCodeViz Status\n'));
 
       // Project info
       console.log(chalk.cyan('Project:'), projectPath);
@@ -695,7 +695,7 @@ program
         if (changes.removed.length > 0) {
           console.log(`  Removed:   ${changes.removed.length} files`);
         }
-        info('Run "codegraph sync" to update the index');
+        info('Run "codeviz sync" to update the index');
       } else {
         success('Index is up to date');
       }
@@ -709,7 +709,7 @@ program
   });
 
 /**
- * codegraph query <search>
+ * codeviz query <search>
  */
 program
   .command('query <search>')
@@ -723,12 +723,12 @@ program
 
     try {
       if (!isInitialized(projectPath)) {
-        error(`CodeGraph not initialized in ${projectPath}`);
+        error(`CodeViz not initialized in ${projectPath}`);
         process.exit(1);
       }
 
-      const { default: CodeGraph } = await loadCodeGraph();
-      const cg = await CodeGraph.open(projectPath);
+      const { default: CodeViz } = await loadCodeViz();
+      const cg = await CodeViz.open(projectPath);
 
       const limit = parseInt(options.limit || '10', 10);
       const results = cg.searchNodes(search, {
@@ -771,7 +771,7 @@ program
   });
 
 /**
- * codegraph files [path]
+ * codeviz files [path]
  */
 program
   .command('files')
@@ -796,16 +796,16 @@ program
 
     try {
       if (!isInitialized(projectPath)) {
-        error(`CodeGraph not initialized in ${projectPath}`);
+        error(`CodeViz not initialized in ${projectPath}`);
         process.exit(1);
       }
 
-      const { default: CodeGraph } = await loadCodeGraph();
-      const cg = await CodeGraph.open(projectPath);
+      const { default: CodeViz } = await loadCodeViz();
+      const cg = await CodeViz.open(projectPath);
       let files = cg.getFiles();
 
       if (files.length === 0) {
-        info('No files indexed. Run "codegraph index" first.');
+        info('No files indexed. Run "codeviz index" first.');
         cg.destroy();
         return;
       }
@@ -977,7 +977,7 @@ function printFileTree(
 }
 
 /**
- * codegraph context <task>
+ * codeviz context <task>
  */
 program
   .command('context <task>')
@@ -998,12 +998,12 @@ program
 
     try {
       if (!isInitialized(projectPath)) {
-        error(`CodeGraph not initialized in ${projectPath}`);
+        error(`CodeViz not initialized in ${projectPath}`);
         process.exit(1);
       }
 
-      const { default: CodeGraph } = await loadCodeGraph();
-      const cg = await CodeGraph.open(projectPath);
+      const { default: CodeViz } = await loadCodeViz();
+      const cg = await CodeViz.open(projectPath);
 
       const context = await cg.buildContext(task, {
         maxNodes: parseInt(options.maxNodes || '50', 10),
@@ -1023,11 +1023,11 @@ program
   });
 
 /**
- * codegraph serve
+ * codeviz serve
  */
 program
   .command('serve')
-  .description('Start CodeGraph as an MCP server for AI assistants')
+  .description('Start CodeViz as an MCP server for AI assistants')
   .option('-p, --path <path>', 'Project path (optional for MCP mode, uses rootUri from client)')
   .option('--mcp', 'Run as MCP server (stdio transport)')
   .action(async (options: { path?: string; mcp?: boolean }) => {
@@ -1043,28 +1043,28 @@ program
       } else {
         // Default: show info about MCP mode.
         // Use stderr so stdout stays clean for any piped/stdio usage.
-        console.error(chalk.bold('\nCodeGraph MCP Server\n'));
+        console.error(chalk.bold('\nCodeViz MCP Server\n'));
         console.error(chalk.blue('ℹ') + ' Use --mcp flag to start the MCP server');
         console.error('\nTo use with Claude Code, add to your MCP configuration:');
         console.error(chalk.dim(`
 {
   "mcpServers": {
-    "codegraph": {
-      "command": "codegraph",
+    "codeviz": {
+      "command": "codeviz",
       "args": ["serve", "--mcp"]
     }
   }
 }
 `));
         console.error('Available tools:');
-        console.error(chalk.cyan('  codegraph_search') + '    - Search for code symbols');
-        console.error(chalk.cyan('  codegraph_context') + '   - Build context for a task');
-        console.error(chalk.cyan('  codegraph_callers') + '   - Find callers of a symbol');
-        console.error(chalk.cyan('  codegraph_callees') + '   - Find what a symbol calls');
-        console.error(chalk.cyan('  codegraph_impact') + '    - Analyze impact of changes');
-        console.error(chalk.cyan('  codegraph_node') + '      - Get symbol details');
-        console.error(chalk.cyan('  codegraph_files') + '     - Get project file structure');
-        console.error(chalk.cyan('  codegraph_status') + '    - Get index status');
+        console.error(chalk.cyan('  codeviz_search') + '    - Search for code symbols');
+        console.error(chalk.cyan('  codeviz_context') + '   - Build context for a task');
+        console.error(chalk.cyan('  codeviz_callers') + '   - Find callers of a symbol');
+        console.error(chalk.cyan('  codeviz_callees') + '   - Find what a symbol calls');
+        console.error(chalk.cyan('  codeviz_impact') + '    - Analyze impact of changes');
+        console.error(chalk.cyan('  codeviz_node') + '      - Get symbol details');
+        console.error(chalk.cyan('  codeviz_files') + '     - Get project file structure');
+        console.error(chalk.cyan('  codeviz_status') + '    - Get index status');
       }
     } catch (err) {
       error(`Failed to start server: ${err instanceof Error ? err.message : String(err)}`);
@@ -1073,7 +1073,7 @@ program
   });
 
 /**
- * codegraph unlock [path]
+ * codeviz unlock [path]
  */
 program
   .command('unlock [path]')
@@ -1083,11 +1083,11 @@ program
 
     try {
       if (!isInitialized(projectPath)) {
-        error(`CodeGraph not initialized in ${projectPath}`);
+        error(`CodeViz not initialized in ${projectPath}`);
         return;
       }
 
-      const lockPath = path.join(getCodeGraphDir(projectPath), 'codegraph.lock');
+      const lockPath = path.join(getCodeVizDir(projectPath), 'codeviz.lock');
 
       if (!fs.existsSync(lockPath)) {
         info('No lock file found — nothing to do');
@@ -1103,14 +1103,14 @@ program
   });
 
 /**
- * codegraph affected [files...]
+ * codeviz affected [files...]
  *
  * Find test files affected by the given source files.
  * Traces dependency edges transitively to find test files that depend on changed code.
  *
  * Usage:
- *   git diff --name-only | codegraph affected --stdin
- *   codegraph affected src/lib/components/Editor.svelte src/routes/+page.svelte
+ *   git diff --name-only | codeviz affected --stdin
+ *   codeviz affected src/lib/components/Editor.svelte src/routes/+page.svelte
  */
 program
   .command('affected [files...]')
@@ -1126,7 +1126,7 @@ program
 
     try {
       if (!isInitialized(projectPath)) {
-        error(`CodeGraph not initialized in ${projectPath}`);
+        error(`CodeViz not initialized in ${projectPath}`);
         process.exit(1);
       }
 
@@ -1144,8 +1144,8 @@ program
         process.exit(0);
       }
 
-      const { default: CodeGraph } = await loadCodeGraph();
-      const cg = await CodeGraph.open(projectPath);
+      const { default: CodeViz } = await loadCodeViz();
+      const cg = await CodeViz.open(projectPath);
       const maxDepth = parseInt(options.depth || '5', 10);
 
       // Common test file patterns
@@ -1241,7 +1241,7 @@ program
   });
 
 /**
- * codegraph install
+ * codeviz install
  */
 program
   .command('install')

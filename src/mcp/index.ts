@@ -1,14 +1,14 @@
 /**
- * CodeGraph MCP Server
+ * CodeViz MCP Server
  *
- * Model Context Protocol server that exposes CodeGraph functionality
+ * Model Context Protocol server that exposes CodeViz functionality
  * as tools for AI assistants like Claude.
  *
  * @module mcp
  *
  * @example
  * ```typescript
- * import { MCPServer } from 'codegraph';
+ * import { MCPServer } from 'codeviz';
  *
  * const server = new MCPServer('/path/to/project');
  * await server.start();
@@ -16,7 +16,7 @@
  */
 
 import * as path from 'path';
-import CodeGraph, { findNearestCodeGraphRoot } from '../index';
+import CodeViz, { findNearestCodeVizRoot } from '../index';
 import { StdioTransport, JsonRpcRequest, JsonRpcNotification, ErrorCodes } from './transport';
 import { tools, ToolHandler } from './tools';
 
@@ -43,7 +43,7 @@ function fileUriToPath(uri: string): string {
  * MCP Server Info
  */
 const SERVER_INFO = {
-  name: 'codegraph',
+  name: 'codeviz',
   version: '0.1.0',
 };
 
@@ -53,14 +53,14 @@ const SERVER_INFO = {
 const PROTOCOL_VERSION = '2024-11-05';
 
 /**
- * MCP Server for CodeGraph
+ * MCP Server for CodeViz
  *
- * Implements the Model Context Protocol to expose CodeGraph
+ * Implements the Model Context Protocol to expose CodeViz
  * functionality as tools that can be called by AI assistants.
  */
 export class MCPServer {
   private transport: StdioTransport;
-  private cg: CodeGraph | null = null;
+  private cg: CodeViz | null = null;
   private toolHandler: ToolHandler;
   private projectPath: string | null;
 
@@ -74,7 +74,7 @@ export class MCPServer {
   /**
    * Start the MCP server
    *
-   * Note: CodeGraph initialization is deferred until the initialize request
+   * Note: CodeViz initialization is deferred until the initialize request
    * is received, which includes the rootUri from the client.
    */
   async start(): Promise<void> {
@@ -93,9 +93,9 @@ export class MCPServer {
   }
 
   /**
-   * Try to initialize CodeGraph for the default project.
+   * Try to initialize CodeViz for the default project.
    *
-   * Walks up parent directories to find the nearest .codegraph/ folder,
+   * Walks up parent directories to find the nearest .codeviz/ folder,
    * similar to how git finds .git/ directories.
    *
    * If initialization fails, the error is recorded but the server continues
@@ -103,8 +103,8 @@ export class MCPServer {
    * are still possible.
    */
   private async tryInitializeDefault(projectPath: string): Promise<void> {
-    // Walk up parent directories to find nearest .codegraph/
-    const resolvedRoot = findNearestCodeGraphRoot(projectPath);
+    // Walk up parent directories to find nearest .codeviz/
+    const resolvedRoot = findNearestCodeVizRoot(projectPath);
 
     if (!resolvedRoot) {
       this.projectPath = projectPath;
@@ -114,13 +114,13 @@ export class MCPServer {
     this.projectPath = resolvedRoot;
 
     try {
-      this.cg = await CodeGraph.open(resolvedRoot);
-      this.toolHandler.setDefaultCodeGraph(this.cg);
+      this.cg = await CodeViz.open(resolvedRoot);
+      this.toolHandler.setDefaultCodeViz(this.cg);
       this.startWatching();
     } catch (err) {
       // Log the error so transient failures are diagnosable (see issue #47)
       const msg = err instanceof Error ? err.message : String(err);
-      process.stderr.write(`[CodeGraph MCP] Failed to open project at ${resolvedRoot}: ${msg}\n`);
+      process.stderr.write(`[CodeViz MCP] Failed to open project at ${resolvedRoot}: ${msg}\n`);
     }
   }
 
@@ -132,11 +132,11 @@ export class MCPServer {
    */
   private retryInitIfNeeded(): void {
     // Already initialized successfully
-    if (this.toolHandler.hasDefaultCodeGraph()) return;
+    if (this.toolHandler.hasDefaultCodeViz()) return;
     // No project path to retry with
     if (!this.projectPath) return;
 
-    const resolvedRoot = findNearestCodeGraphRoot(this.projectPath);
+    const resolvedRoot = findNearestCodeVizRoot(this.projectPath);
     if (!resolvedRoot) return;
 
     try {
@@ -145,9 +145,9 @@ export class MCPServer {
         try { this.cg.close(); } catch { /* ignore */ }
         this.cg = null;
       }
-      this.cg = CodeGraph.openSync(resolvedRoot);
+      this.cg = CodeViz.openSync(resolvedRoot);
       this.projectPath = resolvedRoot;
-      this.toolHandler.setDefaultCodeGraph(this.cg);
+      this.toolHandler.setDefaultCodeViz(this.cg);
       this.startWatching();
     } catch {
       // Still failing — will retry on next tool call
@@ -155,7 +155,7 @@ export class MCPServer {
   }
 
   /**
-   * Start file watching on the active CodeGraph instance.
+   * Start file watching on the active CodeViz instance.
    * Logs sync activity to stderr for diagnostics.
    */
   private startWatching(): void {
@@ -165,17 +165,17 @@ export class MCPServer {
       onSyncComplete: (result) => {
         if (result.filesChanged > 0) {
           process.stderr.write(
-            `[CodeGraph MCP] Auto-synced ${result.filesChanged} file(s) in ${result.durationMs}ms\n`
+            `[CodeViz MCP] Auto-synced ${result.filesChanged} file(s) in ${result.durationMs}ms\n`
           );
         }
       },
       onSyncError: (err) => {
-        process.stderr.write(`[CodeGraph MCP] Auto-sync error: ${err.message}\n`);
+        process.stderr.write(`[CodeViz MCP] Auto-sync error: ${err.message}\n`);
       },
     });
 
     if (started) {
-      process.stderr.write('[CodeGraph MCP] File watcher active — graph will auto-sync on changes\n');
+      process.stderr.write('[CodeViz MCP] File watcher active — graph will auto-sync on changes\n');
     }
   }
 
@@ -185,7 +185,7 @@ export class MCPServer {
   stop(): void {
     // Close all cached cross-project connections first
     this.toolHandler.closeAll();
-    // Close the main CodeGraph instance
+    // Close the main CodeViz instance
     if (this.cg) {
       this.cg.close();
       this.cg = null;
@@ -321,7 +321,7 @@ export class MCPServer {
     }
 
     // If the default project isn't initialized yet, retry in case it was
-    // initialized after the MCP server started (e.g. user ran codegraph init)
+    // initialized after the MCP server started (e.g. user ran codeviz init)
     this.retryInitIfNeeded();
 
     const result = await this.toolHandler.execute(toolName, toolArgs);

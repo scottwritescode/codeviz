@@ -170,11 +170,11 @@ export class DatabaseConnection {
 /**
  * Default database filename
  */
-export const DATABASE_FILENAME = 'codegraph.db';
+export const DATABASE_FILENAME = 'codeviz.db';
 
 /**
  * Get the default database path for a project
  */
 export function getDatabasePath(projectRoot: string): string {
-  return path.join(projectRoot, '.codegraph', DATABASE_FILENAME);
+  return path.join(projectRoot, '.codeviz', DATABASE_FILENAME);
 }

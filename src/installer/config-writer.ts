@@ -1,5 +1,5 @@
 /**
- * Config file writing for the CodeGraph installer
+ * Config file writing for the CodeViz installer
  * Writes to claude.json, settings.json, and CLAUDE.md
  */
 
@@ -9,8 +9,8 @@ import * as os from 'os';
 export type InstallLocation = 'global' | 'local';
 import {
   CLAUDE_MD_TEMPLATE,
-  CODEGRAPH_SECTION_START,
-  CODEGRAPH_SECTION_END,
+  CODEVIZ_SECTION_START,
+  CODEVIZ_SECTION_END,
 } from './claude-md-template';
 
 /**
@@ -103,7 +103,7 @@ function writeJsonFile(filePath: string, data: Record<string, any>): void {
 function getMcpServerConfig(): Record<string, any> {
   return {
     type: 'stdio',
-    command: 'codegraph',
+    command: 'codeviz',
     args: ['serve', '--mcp'],
   };
 }
@@ -120,24 +120,24 @@ export function writeMcpConfig(location: InstallLocation): void {
     config.mcpServers = {};
   }
 
-  // Add or update codegraph server
-  config.mcpServers.codegraph = getMcpServerConfig();
+  // Add or update codeviz server
+  config.mcpServers.codeviz = getMcpServerConfig();
 
   writeJsonFile(claudeJsonPath, config);
 }
 
 /**
- * Get the list of permissions for CodeGraph tools
+ * Get the list of permissions for CodeViz tools
  */
-function getCodeGraphPermissions(): string[] {
+function getCodeVizPermissions(): string[] {
   return [
-    'mcp__codegraph__codegraph_search',
-    'mcp__codegraph__codegraph_context',
-    'mcp__codegraph__codegraph_callers',
-    'mcp__codegraph__codegraph_callees',
-    'mcp__codegraph__codegraph_impact',
-    'mcp__codegraph__codegraph_node',
-    'mcp__codegraph__codegraph_status',
+    'mcp__codeviz__codeviz_search',
+    'mcp__codeviz__codeviz_context',
+    'mcp__codeviz__codeviz_callers',
+    'mcp__codeviz__codeviz_callees',
+    'mcp__codeviz__codeviz_impact',
+    'mcp__codeviz__codeviz_node',
+    'mcp__codeviz__codeviz_status',
   ];
 }
 
@@ -158,9 +158,9 @@ export function writePermissions(location: InstallLocation): void {
     settings.permissions.allow = [];
   }
 
-  // Add CodeGraph permissions (avoiding duplicates)
-  const codegraphPermissions = getCodeGraphPermissions();
-  for (const permission of codegraphPermissions) {
+  // Add CodeViz permissions (avoiding duplicates)
+  const codevizPermissions = getCodeVizPermissions();
+  for (const permission of codevizPermissions) {
     if (!settings.permissions.allow.includes(permission)) {
       settings.permissions.allow.push(permission);
     }
@@ -170,16 +170,16 @@ export function writePermissions(location: InstallLocation): void {
 }
 
 /**
- * Check if MCP config already exists for CodeGraph
+ * Check if MCP config already exists for CodeViz
  */
 export function hasMcpConfig(location: InstallLocation): boolean {
   const claudeJsonPath = getClaudeJsonPath(location);
   const config = readJsonFile(claudeJsonPath);
-  return !!config.mcpServers?.codegraph;
+  return !!config.mcpServers?.codeviz;
 }
 
 /**
- * Check if permissions already exist for CodeGraph
+ * Check if permissions already exist for CodeViz
  */
 export function hasPermissions(location: InstallLocation): boolean {
   const settingsPath = getSettingsJsonPath(location);
@@ -188,8 +188,8 @@ export function hasPermissions(location: InstallLocation): boolean {
   if (!Array.isArray(permissions)) {
     return false;
   }
-  // Check if at least one CodeGraph permission exists
-  return permissions.some((p: string) => p.startsWith('mcp__codegraph__'));
+  // Check if at least one CodeViz permission exists
+  return permissions.some((p: string) => p.startsWith('mcp__codeviz__'));
 }
 
 /**
@@ -203,14 +203,14 @@ function getClaudeMdPath(location: InstallLocation): string {
 }
 
 /**
- * Check if CLAUDE.md has CodeGraph section
+ * Check if CLAUDE.md has CodeViz section
  */
 export function hasClaudeMdSection(location: InstallLocation): boolean {
   const claudeMdPath = getClaudeMdPath(location);
   try {
     if (fs.existsSync(claudeMdPath)) {
       const content = fs.readFileSync(claudeMdPath, 'utf-8');
-      return content.includes(CODEGRAPH_SECTION_START) || content.includes('## CodeGraph');
+      return content.includes(CODEVIZ_SECTION_START) || content.includes('## CodeViz');
     }
   } catch {
     // Ignore errors
@@ -219,9 +219,9 @@ export function hasClaudeMdSection(location: InstallLocation): boolean {
 }
 
 /**
- * Write or update CLAUDE.md with CodeGraph instructions
+ * Write or update CLAUDE.md with CodeViz instructions
  *
- * If the file exists and has a CodeGraph section (marked or unmarked),
+ * If the file exists and has a CodeViz section (marked or unmarked),
  * it will be replaced. Otherwise, the template is appended.
  */
 export function writeClaudeMd(location: InstallLocation): { created: boolean; updated: boolean } {
@@ -235,7 +235,7 @@ export function writeClaudeMd(location: InstallLocation): { created: boolean; up
 
   // Check if file exists
   if (!fs.existsSync(claudeMdPath)) {
-    // Create new file with just the CodeGraph section
+    // Create new file with just the CodeViz section
     atomicWriteFileSync(claudeMdPath, CLAUDE_MD_TEMPLATE + '\n');
     return { created: true, updated: false };
   }
@@ -244,27 +244,27 @@ export function writeClaudeMd(location: InstallLocation): { created: boolean; up
   let content = fs.readFileSync(claudeMdPath, 'utf-8');
 
   // Check for marked section (from previous installer)
-  if (content.includes(CODEGRAPH_SECTION_START)) {
+  if (content.includes(CODEVIZ_SECTION_START)) {
     // Replace the marked section
-    const startIdx = content.indexOf(CODEGRAPH_SECTION_START);
-    const endIdx = content.indexOf(CODEGRAPH_SECTION_END);
+    const startIdx = content.indexOf(CODEVIZ_SECTION_START);
+    const endIdx = content.indexOf(CODEVIZ_SECTION_END);
 
     if (endIdx > startIdx) {
       // Replace existing marked section
       const before = content.substring(0, startIdx);
-      const after = content.substring(endIdx + CODEGRAPH_SECTION_END.length);
+      const after = content.substring(endIdx + CODEVIZ_SECTION_END.length);
       content = before + CLAUDE_MD_TEMPLATE + after;
       atomicWriteFileSync(claudeMdPath, content);
       return { created: false, updated: true };
     }
   }
 
-  // Check for unmarked "## CodeGraph" section (from manual setup)
-  const codegraphHeaderRegex = /\n## CodeGraph\n/;
-  const match = content.match(codegraphHeaderRegex);
+  // Check for unmarked "## CodeViz" section (from manual setup)
+  const codevizHeaderRegex = /\n## CodeViz\n/;
+  const match = content.match(codevizHeaderRegex);
 
   if (match && match.index !== undefined) {
-    // Find the end of the CodeGraph section (next h2 header or end of file)
+    // Find the end of the CodeViz section (next h2 header or end of file)
     // Use negative lookahead (?!#) to match "## X" but not "### X"
     const sectionStart = match.index;
     const afterSection = content.substring(sectionStart + 1);

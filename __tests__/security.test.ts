@@ -13,16 +13,16 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { FileLock } from '../src/utils';
-import CodeGraph from '../src/index';
+import CodeViz from '../src/index';
 import { ToolHandler, tools } from '../src/mcp/tools';
 import { shouldIncludeFile, scanDirectory } from '../src/extraction';
 import { shouldIncludeFile as configShouldInclude } from '../src/config';
-import { CodeGraphConfig, DEFAULT_CONFIG } from '../src/types';
+import { CodeVizConfig, DEFAULT_CONFIG } from '../src/types';
 import { DatabaseConnection, getDatabasePath } from '../src/db';
 import { QueryBuilder } from '../src/db/queries';
 
 function createTempDir(): string {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'codegraph-security-test-'));
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'codeviz-security-test-'));
 }
 
 function cleanupTempDir(dir: string): void {
@@ -139,7 +139,7 @@ describe('FileLock', () => {
 
 describe('Path Traversal Prevention', () => {
   let testDir: string;
-  let cg: CodeGraph;
+  let cg: CodeViz;
 
   beforeEach(async () => {
     testDir = createTempDir();
@@ -152,7 +152,7 @@ describe('Path Traversal Prevention', () => {
       `export function hello(): string { return "hi"; }\n`
     );
 
-    cg = CodeGraph.initSync(testDir, {
+    cg = CodeViz.initSync(testDir, {
       config: { include: ['**/*.ts'], exclude: [] },
     });
     await cg.indexAll();
@@ -180,7 +180,7 @@ describe('Path Traversal Prevention', () => {
 
 describe('MCP Input Validation', () => {
   let testDir: string;
-  let cg: CodeGraph;
+  let cg: CodeViz;
   let handler: ToolHandler;
 
   beforeEach(async () => {
@@ -194,7 +194,7 @@ describe('MCP Input Validation', () => {
       `export function exampleFunc(): void {}\nexport class ExampleClass {}\n`
     );
 
-    cg = CodeGraph.initSync(testDir, {
+    cg = CodeViz.initSync(testDir, {
       config: { include: ['**/*.ts'], exclude: [] },
     });
     await cg.indexAll();
@@ -206,63 +206,63 @@ describe('MCP Input Validation', () => {
     cleanupTempDir(testDir);
   });
 
-  it('should reject non-string query in codegraph_search', async () => {
-    const result = await handler.execute('codegraph_search', { query: null });
+  it('should reject non-string query in codeviz_search', async () => {
+    const result = await handler.execute('codeviz_search', { query: null });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('non-empty string');
   });
 
-  it('should reject empty string query in codegraph_search', async () => {
-    const result = await handler.execute('codegraph_search', { query: '' });
+  it('should reject empty string query in codeviz_search', async () => {
+    const result = await handler.execute('codeviz_search', { query: '' });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('non-empty string');
   });
 
-  it('should accept valid query in codegraph_search', async () => {
-    const result = await handler.execute('codegraph_search', { query: 'example' });
+  it('should accept valid query in codeviz_search', async () => {
+    const result = await handler.execute('codeviz_search', { query: 'example' });
     expect(result.isError).toBeFalsy();
   });
 
-  it('should clamp limit to valid range in codegraph_search', async () => {
+  it('should clamp limit to valid range in codeviz_search', async () => {
     // Extremely large limit should still work (clamped to 100)
-    const result = await handler.execute('codegraph_search', { query: 'example', limit: 999999 });
+    const result = await handler.execute('codeviz_search', { query: 'example', limit: 999999 });
     expect(result.isError).toBeFalsy();
   });
 
-  it('should reject non-string symbol in codegraph_callers', async () => {
-    const result = await handler.execute('codegraph_callers', { symbol: 123 });
+  it('should reject non-string symbol in codeviz_callers', async () => {
+    const result = await handler.execute('codeviz_callers', { symbol: 123 });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('non-empty string');
   });
 
-  it('should reject non-string task in codegraph_context', async () => {
-    const result = await handler.execute('codegraph_context', { task: undefined });
+  it('should reject non-string task in codeviz_context', async () => {
+    const result = await handler.execute('codeviz_context', { task: undefined });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('non-empty string');
   });
 
-  it('should reject non-string symbol in codegraph_impact', async () => {
-    const result = await handler.execute('codegraph_impact', { symbol: [] });
+  it('should reject non-string symbol in codeviz_impact', async () => {
+    const result = await handler.execute('codeviz_impact', { symbol: [] });
     expect(result.isError).toBe(true);
   });
 
-  it('should reject non-string symbol in codegraph_node', async () => {
-    const result = await handler.execute('codegraph_node', { symbol: false });
+  it('should reject non-string symbol in codeviz_node', async () => {
+    const result = await handler.execute('codeviz_node', { symbol: false });
     expect(result.isError).toBe(true);
   });
 
-  it('should reject non-string symbol in codegraph_callees', async () => {
-    const result = await handler.execute('codegraph_callees', { symbol: {} });
+  it('should reject non-string symbol in codeviz_callees', async () => {
+    const result = await handler.execute('codeviz_callees', { symbol: {} });
     expect(result.isError).toBe(true);
   });
 
   it('should handle NaN limit gracefully', async () => {
-    const result = await handler.execute('codegraph_search', { query: 'example', limit: 'abc' });
+    const result = await handler.execute('codeviz_search', { query: 'example', limit: 'abc' });
     expect(result.isError).toBeFalsy();
   });
 
   it('should handle negative limit gracefully', async () => {
-    const result = await handler.execute('codegraph_search', { query: 'example', limit: -5 });
+    const result = await handler.execute('codeviz_search', { query: 'example', limit: -5 });
     expect(result.isError).toBeFalsy();
   });
 });
@@ -299,7 +299,7 @@ describe('Atomic Writes', () => {
 });
 
 describe('Glob Matching (picomatch)', () => {
-  const makeConfig = (include: string[], exclude: string[]): CodeGraphConfig => ({
+  const makeConfig = (include: string[], exclude: string[]): CodeVizConfig => ({
     ...DEFAULT_CONFIG,
     rootDir: '/test',
     include,
@@ -464,7 +464,7 @@ describe('Symlink Cycle Detection', () => {
       return;
     }
 
-    const config: CodeGraphConfig = {
+    const config: CodeVizConfig = {
       ...DEFAULT_CONFIG,
       rootDir: tempDir,
       include: ['**/*.ts'],
@@ -496,7 +496,7 @@ describe('Symlink Cycle Detection', () => {
       return;
     }
 
-    const config: CodeGraphConfig = {
+    const config: CodeVizConfig = {
       ...DEFAULT_CONFIG,
       rootDir: tempDir,
       include: ['**/*.ts'],
@@ -521,7 +521,7 @@ describe('Symlink Cycle Detection', () => {
       return;
     }
 
-    const config: CodeGraphConfig = {
+    const config: CodeVizConfig = {
       ...DEFAULT_CONFIG,
       rootDir: tempDir,
       include: ['**/*.ts'],

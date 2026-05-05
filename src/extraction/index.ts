@@ -14,7 +14,7 @@ import {
   FileRecord,
   ExtractionResult,
   ExtractionError,
-  CodeGraphConfig,
+  CodeVizConfig,
 } from '../types';
 import { QueryBuilder } from '../db/queries';
 import { extractFromSource } from './tree-sitter';
@@ -104,7 +104,7 @@ function matchesGlob(filePath: string, pattern: string): boolean {
  */
 export function shouldIncludeFile(
   filePath: string,
-  config: CodeGraphConfig
+  config: CodeVizConfig
 ): boolean {
   // Check exclude patterns first
   for (const pattern of config.exclude) {
@@ -188,7 +188,7 @@ interface GitChanges {
  * Use `git status` to detect changed files instead of scanning every file.
  * Returns null on failure so callers fall back to full scan.
  */
-function getGitChangedFiles(rootDir: string, config: CodeGraphConfig): GitChanges | null {
+function getGitChangedFiles(rootDir: string, config: CodeVizConfig): GitChanges | null {
   try {
     const output = execFileSync(
       'git',
@@ -228,7 +228,7 @@ function getGitChangedFiles(rootDir: string, config: CodeGraphConfig): GitChange
 /**
  * Marker file name that indicates a directory (and all children) should be skipped
  */
-const CODEGRAPH_IGNORE_MARKER = '.codegraphignore';
+const CODEVIZ_IGNORE_MARKER = '.codevizignore';
 
 /**
  * Recursively scan directory for source files.
@@ -239,7 +239,7 @@ const CODEGRAPH_IGNORE_MARKER = '.codegraphignore';
  */
 export function scanDirectory(
   rootDir: string,
-  config: CodeGraphConfig,
+  config: CodeVizConfig,
   onProgress?: (current: number, file: string) => void
 ): string[] {
   // Fast path: use git to get all visible files (respects .gitignore everywhere)
@@ -267,7 +267,7 @@ export function scanDirectory(
  */
 export async function scanDirectoryAsync(
   rootDir: string,
-  config: CodeGraphConfig,
+  config: CodeVizConfig,
   onProgress?: (current: number, file: string) => void
 ): Promise<string[]> {
   const gitFiles = getGitVisibleFiles(rootDir);
@@ -296,7 +296,7 @@ export async function scanDirectoryAsync(
  */
 function scanDirectoryWalk(
   rootDir: string,
-  config: CodeGraphConfig,
+  config: CodeVizConfig,
   onProgress?: (current: number, file: string) => void
 ): string[] {
   const files: string[] = [];
@@ -318,10 +318,10 @@ function scanDirectoryWalk(
     }
     visitedDirs.add(realDir);
 
-    // Check for .codegraphignore marker file
-    const ignoreMarker = path.join(dir, CODEGRAPH_IGNORE_MARKER);
+    // Check for .codevizignore marker file
+    const ignoreMarker = path.join(dir, CODEVIZ_IGNORE_MARKER);
     if (fs.existsSync(ignoreMarker)) {
-      logDebug('Skipping directory due to .codegraphignore marker', { dir });
+      logDebug('Skipping directory due to .codevizignore marker', { dir });
       return;
     }
 
@@ -397,10 +397,10 @@ function scanDirectoryWalk(
  */
 export class ExtractionOrchestrator {
   private rootDir: string;
-  private config: CodeGraphConfig;
+  private config: CodeVizConfig;
   private queries: QueryBuilder;
 
-  constructor(rootDir: string, config: CodeGraphConfig, queries: QueryBuilder) {
+  constructor(rootDir: string, config: CodeVizConfig, queries: QueryBuilder) {
     this.rootDir = rootDir;
     this.config = config;
     this.queries = queries;

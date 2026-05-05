@@ -213,7 +213,7 @@ export function createDatabase(dbPath: string): SqliteDatabase {
   try {
     const db = new WasmDatabaseAdapter(dbPath);
     activeBackend = 'wasm';
-    console.warn('[CodeGraph] Using WASM SQLite backend (native better-sqlite3 unavailable)');
+    console.warn('[CodeViz] Using WASM SQLite backend (native better-sqlite3 unavailable)');
     return db;
   } catch (error) {
     wasmError = error instanceof Error ? error.message : String(error);

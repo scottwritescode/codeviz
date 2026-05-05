@@ -1,12 +1,12 @@
 <div align="center">
 
-# CodeGraph
+# CodeViz
 
 ### Supercharge Claude Code with Semantic Code Intelligence
 
 **94% fewer tool calls · 77% faster exploration · 100% local**
 
-[![npm version](https://img.shields.io/npm/v/@colbymchenry/codegraph.svg)](https://www.npmjs.com/package/@colbymchenry/codegraph)
+[![npm version](https://img.shields.io/npm/v/@colbymchenry/codeviz.svg)](https://www.npmjs.com/package/@colbymchenry/codeviz)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
 
@@ -19,7 +19,7 @@
 ### Get Started
 
 ```bash
-npx @colbymchenry/codegraph
+npx @colbymchenry/codeviz
 ```
 
 <sub>Interactive installer configures Claude Code automatically</sub>
@@ -30,15 +30,15 @@ npx @colbymchenry/codegraph
 
 ---
 
-## Why CodeGraph?
+## Why CodeViz?
 
 When Claude Code explores a codebase, it spawns **Explore agents** that scan files with grep, glob, and Read — consuming tokens on every tool call.
 
-**CodeGraph gives those agents a pre-indexed knowledge graph** — symbol relationships, call graphs, and code structure. Agents query the graph instantly instead of scanning files.
+**CodeViz gives those agents a pre-indexed knowledge graph** — symbol relationships, call graphs, and code structure. Agents query the graph instantly instead of scanning files.
 
 ### Benchmark Results
 
-Tested across 6 real-world codebases comparing Claude Code's Explore agent **with** and **without** CodeGraph:
+Tested across 6 real-world codebases comparing Claude Code's Explore agent **with** and **without** CodeViz:
 
 > **Average: 92% fewer tool calls · 71% faster**
 
@@ -66,7 +66,7 @@ All tests used Claude Opus 4.6 (1M context) with Claude Code v2.1.91. Each test 
 | Alamofire | "Trace how a request flows from Session.request() through to the URLSession layer" |
 | Swift Compiler | "How does the Swift compiler handle error diagnostics?" |
 
-**With CodeGraph — the agent uses `codegraph_explore` and stops:**
+**With CodeViz — the agent uses `codeviz_explore` and stops:**
 | Codebase | Files Indexed | Nodes | Tool Uses | Tokens | Time | File Reads |
 |----------|--------------|-------|-----------|--------|------|------------|
 | VS Code (TypeScript) | 4,002 | 59,377 | 3 | 56.6k | 17s | 0 |
@@ -76,7 +76,7 @@ All tests used Claude Opus 4.6 (1M context) with Claude Code v2.1.91. Each test 
 | Alamofire (Swift) | 102 | 2,624 | 3 | 57.3k | 22s | 0 |
 | Swift Compiler (Swift/C++) | 25,874 | 272,898 | 6 | 77.4k | 35s | 0 |
 
-**Without CodeGraph — the agent uses grep, find, ls, and Read extensively:**
+**Without CodeViz — the agent uses grep, find, ls, and Read extensively:**
 | Codebase | Tool Uses | Tokens | Time | File Reads |
 |----------|-----------|--------|------|------------|
 | VS Code (TypeScript) | 52 | 89.4k | 1m 37s | ~15 |
@@ -87,12 +87,12 @@ All tests used Claude Opus 4.6 (1M context) with Claude Code v2.1.91. Each test 
 | Swift Compiler (Swift/C++) | 37 | 99.1k | 2m 8s | ~20 |
 
 **Key observations:**
-- With CodeGraph, the agent **never fell back to reading files** — it trusted the codegraph_explore results completely
-- Without CodeGraph, agents spent most of their time on discovery (find, ls, grep) before they could even start reading relevant code
-- The Java codebase needed only **1 codegraph_explore call** to answer the entire question
-- Cross-language queries (Python+Rust) worked seamlessly — CodeGraph's graph traversal found connections across language boundaries
-- The Swift benchmark (Alamofire) traced a **9-step call chain** from `Session.request()` to `URLSession.dataTask()` — CodeGraph's graph traversal at depth 3 captured the full chain in one explore call
-- The **Swift Compiler** benchmark is the largest codebase tested (**25,874 files, 272,898 nodes**) — CodeGraph indexed it in under 4 minutes and the agent answered a complex cross-cutting question with **6 explore calls and zero file reads** in 35 seconds
+- With CodeViz, the agent **never fell back to reading files** — it trusted the codeviz_explore results completely
+- Without CodeViz, agents spent most of their time on discovery (find, ls, grep) before they could even start reading relevant code
+- The Java codebase needed only **1 codeviz_explore call** to answer the entire question
+- Cross-language queries (Python+Rust) worked seamlessly — CodeViz's graph traversal found connections across language boundaries
+- The Swift benchmark (Alamofire) traced a **9-step call chain** from `Session.request()` to `URLSession.dataTask()` — CodeViz's graph traversal at depth 3 captured the full chain in one explore call
+- The **Swift Compiler** benchmark is the largest codebase tested (**25,874 files, 272,898 nodes**) — CodeViz indexed it in under 4 minutes and the agent answered a complex cross-cutting question with **6 explore calls and zero file reads** in 35 seconds
 
 </details>
 
@@ -116,13 +116,13 @@ All tests used Claude Opus 4.6 (1M context) with Claude Code v2.1.91. Each test 
 ### 1. Run the Installer
 
 ```bash
-npx @colbymchenry/codegraph
+npx @colbymchenry/codeviz
 ```
 
 The installer will:
-- Prompt to install `codegraph` globally (needed for the MCP server)
+- Prompt to install `codeviz` globally (needed for the MCP server)
 - Configure the MCP server in `~/.claude.json`
-- Set up auto-allow permissions for CodeGraph tools
+- Set up auto-allow permissions for CodeViz tools
 - Add global instructions to `~/.claude/CLAUDE.md`
 - Optionally initialize your current project
 
@@ -134,26 +134,26 @@ Restart Claude Code for the MCP server to load.
 
 ```bash
 cd your-project
-codegraph init -i
+codeviz init -i
 ```
 
-That's it! Claude Code will use CodeGraph tools automatically when a `.codegraph/` directory exists.
+That's it! Claude Code will use CodeViz tools automatically when a `.codeviz/` directory exists.
 
 <details>
 <summary><strong>Manual Setup (Alternative)</strong></summary>
 
 **Install globally:**
 ```bash
-npm install -g @colbymchenry/codegraph
+npm install -g @colbymchenry/codeviz
 ```
 
 **Add to `~/.claude.json`:**
 ```json
 {
   "mcpServers": {
-    "codegraph": {
+    "codeviz": {
       "type": "stdio",
-      "command": "codegraph",
+      "command": "codeviz",
       "args": ["serve", "--mcp"]
     }
   }
@@ -165,14 +165,14 @@ npm install -g @colbymchenry/codegraph
 {
   "permissions": {
     "allow": [
-      "mcp__codegraph__codegraph_search",
-      "mcp__codegraph__codegraph_context",
-      "mcp__codegraph__codegraph_callers",
-      "mcp__codegraph__codegraph_callees",
-      "mcp__codegraph__codegraph_impact",
-      "mcp__codegraph__codegraph_node",
-      "mcp__codegraph__codegraph_status",
-      "mcp__codegraph__codegraph_files"
+      "mcp__codeviz__codeviz_search",
+      "mcp__codeviz__codeviz_context",
+      "mcp__codeviz__codeviz_callers",
+      "mcp__codeviz__codeviz_callees",
+      "mcp__codeviz__codeviz_impact",
+      "mcp__codeviz__codeviz_node",
+      "mcp__codeviz__codeviz_status",
+      "mcp__codeviz__codeviz_files"
     ]
   }
 }
@@ -186,37 +186,37 @@ npm install -g @colbymchenry/codegraph
 The installer automatically adds these instructions to `~/.claude/CLAUDE.md`:
 
 ```markdown
-## CodeGraph
+## CodeViz
 
-CodeGraph builds a semantic knowledge graph of codebases for faster, smarter code exploration.
+CodeViz builds a semantic knowledge graph of codebases for faster, smarter code exploration.
 
-### If `.codegraph/` exists in the project
+### If `.codeviz/` exists in the project
 
-**NEVER call `codegraph_explore` or `codegraph_context` directly in the main session.** These tools return large amounts of source code that fills up main session context. Instead, ALWAYS spawn an Explore agent for any exploration question (e.g., "how does X work?", "explain the Y system", "where is Z implemented?").
+**NEVER call `codeviz_explore` or `codeviz_context` directly in the main session.** These tools return large amounts of source code that fills up main session context. Instead, ALWAYS spawn an Explore agent for any exploration question (e.g., "how does X work?", "explain the Y system", "where is Z implemented?").
 
 **When spawning Explore agents**, include this instruction in the prompt:
 
-> This project has CodeGraph initialized (.codegraph/ exists). Use `codegraph_explore` as your PRIMARY tool — it returns full source code sections from all relevant files in one call.
+> This project has CodeViz initialized (.codeviz/ exists). Use `codeviz_explore` as your PRIMARY tool — it returns full source code sections from all relevant files in one call.
 >
 > **Rules:**
-> 1. Follow the explore call budget in the `codegraph_explore` tool description — it scales automatically based on project size.
-> 2. Do NOT re-read files that codegraph_explore already returned source code for. The source sections are complete and authoritative.
-> 3. Only fall back to grep/glob/read for files listed under "Additional relevant files" if you need more detail, or if codegraph returned no results.
+> 1. Follow the explore call budget in the `codeviz_explore` tool description — it scales automatically based on project size.
+> 2. Do NOT re-read files that codeviz_explore already returned source code for. The source sections are complete and authoritative.
+> 3. Only fall back to grep/glob/read for files listed under "Additional relevant files" if you need more detail, or if codeviz returned no results.
 
 **The main session may only use these lightweight tools directly** (for targeted lookups before making edits, not for exploration):
 
 | Tool | Use For |
 |------|---------|
-| `codegraph_search` | Find symbols by name |
-| `codegraph_callers` / `codegraph_callees` | Trace call flow |
-| `codegraph_impact` | Check what's affected before editing |
-| `codegraph_node` | Get a single symbol's details |
+| `codeviz_search` | Find symbols by name |
+| `codeviz_callers` / `codeviz_callees` | Trace call flow |
+| `codeviz_impact` | Check what's affected before editing |
+| `codeviz_node` | Get a single symbol's details |
 
-### If `.codegraph/` does NOT exist
+### If `.codeviz/` does NOT exist
 
-At the start of a session, ask the user if they'd like to initialize CodeGraph:
+At the start of a session, ask the user if they'd like to initialize CodeViz:
 
-"I notice this project doesn't have CodeGraph initialized. Would you like me to run `codegraph init -i` to build a code knowledge graph?"
+"I notice this project doesn't have CodeViz initialized. Would you like me to run `codeviz init -i` to build a code knowledge graph?"
 ```
 
 </details>
@@ -240,7 +240,7 @@ At the start of a session, ask the user if they'd like to initialize CodeGraph:
             │                        │
             ▼                        ▼
 ┌───────────────────────────────────────────────────────────────────┐
-│                     CodeGraph MCP Server                          │
+│                     CodeViz MCP Server                          │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐               │
 │  │   Search    │  │   Callers   │  │   Context   │               │
 │  │  "auth"     │  │  "login()"  │  │  for task   │               │
@@ -259,7 +259,7 @@ At the start of a session, ask the user if they'd like to initialize CodeGraph:
 
 1. **Extraction** — [tree-sitter](https://tree-sitter.github.io/) parses source code into ASTs. Language-specific queries extract nodes (functions, classes, methods) and edges (calls, imports, extends, implements).
 
-2. **Storage** — Everything goes into a local SQLite database (`.codegraph/codegraph.db`) with FTS5 full-text search.
+2. **Storage** — Everything goes into a local SQLite database (`.codeviz/codeviz.db`) with FTS5 full-text search.
 
 3. **Resolution** — After extraction, references are resolved: function calls → definitions, imports → source files, class inheritance, and framework-specific patterns.
 
@@ -270,28 +270,28 @@ At the start of a session, ask the user if they'd like to initialize CodeGraph:
 ## CLI Reference
 
 ```bash
-codegraph                         # Run interactive installer
-codegraph install                 # Run installer (explicit)
-codegraph init [path]             # Initialize in a project (--index to also index)
-codegraph uninit [path]           # Remove CodeGraph from a project (--force to skip prompt)
-codegraph index [path]            # Full index (--force to re-index, --quiet for less output)
-codegraph sync [path]             # Incremental update
-codegraph status [path]           # Show statistics
-codegraph query <search>          # Search symbols (--kind, --limit, --json)
-codegraph files [path]            # Show file structure (--format, --filter, --max-depth, --json)
-codegraph context <task>          # Build context for AI (--format, --max-nodes)
-codegraph affected [files...]     # Find test files affected by changes (see below)
-codegraph serve --mcp             # Start MCP server
+codeviz                         # Run interactive installer
+codeviz install                 # Run installer (explicit)
+codeviz init [path]             # Initialize in a project (--index to also index)
+codeviz uninit [path]           # Remove CodeViz from a project (--force to skip prompt)
+codeviz index [path]            # Full index (--force to re-index, --quiet for less output)
+codeviz sync [path]             # Incremental update
+codeviz status [path]           # Show statistics
+codeviz query <search>          # Search symbols (--kind, --limit, --json)
+codeviz files [path]            # Show file structure (--format, --filter, --max-depth, --json)
+codeviz context <task>          # Build context for AI (--format, --max-nodes)
+codeviz affected [files...]     # Find test files affected by changes (see below)
+codeviz serve --mcp             # Start MCP server
 ```
 
-### `codegraph affected`
+### `codeviz affected`
 
 Traces import dependencies transitively to find which test files are affected by changed source files.
 
 ```bash
-codegraph affected src/utils.ts src/api.ts         # Pass files as arguments
-git diff --name-only | codegraph affected --stdin   # Pipe from git diff
-codegraph affected src/auth.ts --filter "e2e/*"     # Custom test file pattern
+codeviz affected src/utils.ts src/api.ts         # Pass files as arguments
+git diff --name-only | codeviz affected --stdin   # Pipe from git diff
+codeviz affected src/auth.ts --filter "e2e/*"     # Custom test file pattern
 ```
 
 | Option | Description | Default |
@@ -306,7 +306,7 @@ codegraph affected src/auth.ts --filter "e2e/*"     # Custom test file pattern
 
 ```bash
 #!/usr/bin/env bash
-AFFECTED=$(git diff --name-only HEAD | codegraph affected --stdin --quiet)
+AFFECTED=$(git diff --name-only HEAD | codeviz affected --stdin --quiet)
 if [ -n "$AFFECTED" ]; then
   npx vitest run $AFFECTED
 fi
@@ -316,28 +316,28 @@ fi
 
 ## MCP Tools
 
-When running as an MCP server, CodeGraph exposes these tools to Claude Code:
+When running as an MCP server, CodeViz exposes these tools to Claude Code:
 
 | Tool | Purpose |
 |------|---------|
-| `codegraph_search` | Find symbols by name across the codebase |
-| `codegraph_context` | Build relevant code context for a task |
-| `codegraph_callers` | Find what calls a function |
-| `codegraph_callees` | Find what a function calls |
-| `codegraph_impact` | Analyze what code is affected by changing a symbol |
-| `codegraph_node` | Get details about a specific symbol (optionally with source code) |
-| `codegraph_files` | Get indexed file structure (faster than filesystem scanning) |
-| `codegraph_status` | Check index health and statistics |
+| `codeviz_search` | Find symbols by name across the codebase |
+| `codeviz_context` | Build relevant code context for a task |
+| `codeviz_callers` | Find what calls a function |
+| `codeviz_callees` | Find what a function calls |
+| `codeviz_impact` | Analyze what code is affected by changing a symbol |
+| `codeviz_node` | Get details about a specific symbol (optionally with source code) |
+| `codeviz_files` | Get indexed file structure (faster than filesystem scanning) |
+| `codeviz_status` | Check index health and statistics |
 
 ---
 
 ## Library Usage
 
 ```typescript
-import CodeGraph from '@colbymchenry/codegraph';
+import CodeViz from '@colbymchenry/codeviz';
 
-const cg = await CodeGraph.init('/path/to/project');
-// Or: const cg = await CodeGraph.open('/path/to/project');
+const cg = await CodeViz.init('/path/to/project');
+// Or: const cg = await CodeViz.open('/path/to/project');
 
 await cg.indexAll({
   onProgress: (p) => console.log(`${p.phase}: ${p.current}/${p.total}`)
@@ -357,7 +357,7 @@ cg.close();
 
 ## Configuration
 
-The `.codegraph/config.json` file controls indexing:
+The `.codeviz/config.json` file controls indexing:
 
 ```json
 {
@@ -404,13 +404,13 @@ The `.codegraph/config.json` file controls indexing:
 
 ## Troubleshooting
 
-**"CodeGraph not initialized"** — Run `codegraph init` in your project directory first.
+**"CodeViz not initialized"** — Run `codeviz init` in your project directory first.
 
 **Indexing is slow** — Check that `node_modules` and other large directories are excluded. Use `--quiet` to reduce output overhead.
 
-**MCP server not connecting** — Ensure the project is initialized/indexed, verify the path in your MCP config, and check that `codegraph serve --mcp` works from the command line.
+**MCP server not connecting** — Ensure the project is initialized/indexed, verify the path in your MCP config, and check that `codeviz serve --mcp` works from the command line.
 
-**Missing symbols** — The MCP server auto-syncs on save (wait a couple seconds). Run `codegraph sync` manually if needed. Check that the file's language is supported and isn't excluded by config patterns.
+**Missing symbols** — The MCP server auto-syncs on save (wait a couple seconds). Run `codeviz sync` manually if needed. Check that the file's language is supported and isn't excluded by config patterns.
 
 ## License
 
@@ -422,6 +422,6 @@ MIT
 
 **Made for the Claude Code community**
 
-[Report Bug](https://github.com/colbymchenry/codegraph/issues) · [Request Feature](https://github.com/colbymchenry/codegraph/issues)
+[Report Bug](https://github.com/colbymchenry/codeviz/issues) · [Request Feature](https://github.com/colbymchenry/codeviz/issues)
 
 </div>

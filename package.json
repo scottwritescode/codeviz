@@ -1,11 +1,11 @@
 {
-  "name": "@colbymchenry/codegraph",
+  "name": "@colbymchenry/codeviz",
   "version": "0.7.2",
   "description": "Supercharge Claude Code with semantic code intelligence. 94% fewer tool calls • 77% faster exploration • 100% local.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "codegraph": "./dist/bin/codegraph.js"
+    "codeviz": "./dist/bin/codeviz.js"
   },
   "files": [
     "dist",
@@ -17,7 +17,7 @@
     "preuninstall": "node dist/bin/uninstall.js",
     "copy-assets": "node -e \"const fs=require('fs');fs.mkdirSync('dist/db',{recursive:true});fs.copyFileSync('src/db/schema.sql','dist/db/schema.sql');fs.mkdirSync('dist/extraction/wasm',{recursive:true});fs.readdirSync('src/extraction/wasm').filter(f=>f.endsWith('.wasm')).forEach(f=>fs.copyFileSync('src/extraction/wasm/'+f,'dist/extraction/wasm/'+f))\"",
     "dev": "tsc --watch",
-    "cli": "npm run build && node dist/bin/codegraph.js",
+    "cli": "npm run build && node dist/bin/codeviz.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:eval": "vitest run __tests__/evaluation/",

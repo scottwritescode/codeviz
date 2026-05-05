@@ -1,10 +1,10 @@
 /**
  * MCP Tool Definitions
  *
- * Defines the tools exposed by the CodeGraph MCP server.
+ * Defines the tools exposed by the CodeViz MCP server.
  */
 
-import CodeGraph, { findNearestCodeGraphRoot } from '../index';
+import CodeViz, { findNearestCodeVizRoot } from '../index';
 import type { Node, Edge, SearchResult, Subgraph, TaskContext, NodeKind } from '../types';
 import { createHash } from 'crypto';
 import { writeFileSync, readFileSync, existsSync } from 'fs';
@@ -16,7 +16,7 @@ import { join } from 'path';
 const MAX_OUTPUT_LENGTH = 15000;
 
 /**
- * Calculate the recommended number of codegraph_explore calls based on project size.
+ * Calculate the recommended number of codeviz_explore calls based on project size.
  * Larger codebases need more exploration calls to cover their surface area,
  * but smaller ones should use fewer to avoid unnecessary overhead.
  */
@@ -35,7 +35,7 @@ export function getExploreBudget(fileCount: number): number {
 function markSessionConsulted(sessionId: string): void {
   try {
     const hash = createHash('md5').update(sessionId).digest('hex').slice(0, 16);
-    const markerPath = join(tmpdir(), `codegraph-consulted-${hash}`);
+    const markerPath = join(tmpdir(), `codeviz-consulted-${hash}`);
     writeFileSync(markerPath, new Date().toISOString(), 'utf8');
   } catch {
     // Silently fail - don't break MCP on marker write failure
@@ -78,21 +78,21 @@ export interface ToolResult {
  */
 const projectPathProperty: PropertySchema = {
   type: 'string',
-  description: 'Path to a different project with .codegraph/ initialized. If omitted, uses current project. Use this to query other codebases.',
+  description: 'Path to a different project with .codeviz/ initialized. If omitted, uses current project. Use this to query other codebases.',
 };
 
 /**
- * All CodeGraph MCP tools
+ * All CodeViz MCP tools
  *
- * Designed for minimal context usage - use codegraph_context as the primary tool,
+ * Designed for minimal context usage - use codeviz_context as the primary tool,
  * and only use other tools for targeted follow-up queries.
  *
  * All tools support cross-project queries via the optional `projectPath` parameter.
  */
 export const tools: ToolDefinition[] = [
   {
-    name: 'codegraph_search',
-    description: 'Quick symbol search by name. Returns locations only (no code). Use codegraph_context instead for comprehensive task context.',
+    name: 'codeviz_search',
+    description: 'Quick symbol search by name. Returns locations only (no code). Use codeviz_context instead for comprehensive task context.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -116,7 +116,7 @@ export const tools: ToolDefinition[] = [
     },
   },
   {
-    name: 'codegraph_context',
+    name: 'codeviz_context',
     description: 'PRIMARY TOOL: Build comprehensive context for a task. Returns entry points, related symbols, and key code - often enough to understand the codebase without additional tool calls. NOTE: This provides CODE context, not product requirements. For new features, still clarify UX/behavior questions with the user before implementing.',
     inputSchema: {
       type: 'object',
@@ -141,7 +141,7 @@ export const tools: ToolDefinition[] = [
     },
   },
   {
-    name: 'codegraph_callers',
+    name: 'codeviz_callers',
     description: 'Find all functions/methods that call a specific symbol. Useful for understanding usage patterns and impact of changes.',
     inputSchema: {
       type: 'object',
@@ -161,7 +161,7 @@ export const tools: ToolDefinition[] = [
     },
   },
   {
-    name: 'codegraph_callees',
+    name: 'codeviz_callees',
     description: 'Find all functions/methods that a specific symbol calls. Useful for understanding dependencies and code flow.',
     inputSchema: {
       type: 'object',
@@ -181,7 +181,7 @@ export const tools: ToolDefinition[] = [
     },
   },
   {
-    name: 'codegraph_impact',
+    name: 'codeviz_impact',
     description: 'Analyze the impact radius of changing a symbol. Shows what code could be affected by modifications.',
     inputSchema: {
       type: 'object',
@@ -201,7 +201,7 @@ export const tools: ToolDefinition[] = [
     },
   },
   {
-    name: 'codegraph_node',
+    name: 'codeviz_node',
     description: 'Get detailed information about a specific code symbol. Use includeCode=true only when you need the full source code - otherwise just get location and signature to minimize context usage.',
     inputSchema: {
       type: 'object',
@@ -221,14 +221,14 @@ export const tools: ToolDefinition[] = [
     },
   },
   {
-    name: 'codegraph_explore',
-    description: 'Deep exploration tool — returns comprehensive context for a topic in a SINGLE call. Groups all relevant source code by file (contiguous sections, not snippets), includes a relationship map, and uses deeper graph traversal. Designed to replace multiple codegraph_node + file Read calls. Use this instead of codegraph_context when you need thorough understanding. IMPORTANT: Use specific symbol names, file names, or short code terms in your query — NOT natural language sentences. Before calling this, use codegraph_search to discover relevant symbol names, then include those names in your query. Bad: "how are agent prompts loaded and passed to the CLI". Good: "readAgentsFromDirectory createClaudeSession chat-manager agents.ts".',
+    name: 'codeviz_explore',
+    description: 'Deep exploration tool — returns comprehensive context for a topic in a SINGLE call. Groups all relevant source code by file (contiguous sections, not snippets), includes a relationship map, and uses deeper graph traversal. Designed to replace multiple codeviz_node + file Read calls. Use this instead of codeviz_context when you need thorough understanding. IMPORTANT: Use specific symbol names, file names, or short code terms in your query — NOT natural language sentences. Before calling this, use codeviz_search to discover relevant symbol names, then include those names in your query. Bad: "how are agent prompts loaded and passed to the CLI". Good: "readAgentsFromDirectory createClaudeSession chat-manager agents.ts".',
     inputSchema: {
       type: 'object',
       properties: {
         query: {
           type: 'string',
-          description: 'Symbol names, file names, or short code terms to explore (e.g., "AuthService loginUser session-manager", "GraphTraverser BFS impact traversal.ts"). Use codegraph_search first to find relevant names.',
+          description: 'Symbol names, file names, or short code terms to explore (e.g., "AuthService loginUser session-manager", "GraphTraverser BFS impact traversal.ts"). Use codeviz_search first to find relevant names.',
         },
         maxFiles: {
           type: 'number',
@@ -241,8 +241,8 @@ export const tools: ToolDefinition[] = [
     },
   },
   {
-    name: 'codegraph_status',
-    description: 'Get the status of the CodeGraph index, including statistics about indexed files, nodes, and edges.',
+    name: 'codeviz_status',
+    description: 'Get the status of the CodeViz index, including statistics about indexed files, nodes, and edges.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -251,8 +251,8 @@ export const tools: ToolDefinition[] = [
     },
   },
   {
-    name: 'codegraph_files',
-    description: 'REQUIRED for file/folder exploration. Get the project file structure from the CodeGraph index. Returns a tree view of all indexed files with metadata (language, symbol count). Much faster than Glob/filesystem scanning. Use this FIRST when exploring project structure, finding files, or understanding codebase organization.',
+    name: 'codeviz_files',
+    description: 'REQUIRED for file/folder exploration. Get the project file structure from the CodeViz index. Returns a tree view of all indexed files with metadata (language, symbol count). Much faster than Glob/filesystem scanning. Use this FIRST when exploring project structure, finding files, or understanding codebase organization.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -286,34 +286,34 @@ export const tools: ToolDefinition[] = [
 ];
 
 /**
- * Tool handler that executes tools against a CodeGraph instance
+ * Tool handler that executes tools against a CodeViz instance
  *
  * Supports cross-project queries via the projectPath parameter.
  * Other projects are opened on-demand and cached for performance.
  */
 export class ToolHandler {
-  // Cache of opened CodeGraph instances for cross-project queries
-  private projectCache: Map<string, CodeGraph> = new Map();
+  // Cache of opened CodeViz instances for cross-project queries
+  private projectCache: Map<string, CodeViz> = new Map();
 
-  constructor(private cg: CodeGraph | null) {}
+  constructor(private cg: CodeViz | null) {}
 
   /**
-   * Update the default CodeGraph instance (e.g. after lazy initialization)
+   * Update the default CodeViz instance (e.g. after lazy initialization)
    */
-  setDefaultCodeGraph(cg: CodeGraph): void {
+  setDefaultCodeViz(cg: CodeViz): void {
     this.cg = cg;
   }
 
   /**
-   * Whether a default CodeGraph instance is available
+   * Whether a default CodeViz instance is available
    */
-  hasDefaultCodeGraph(): boolean {
+  hasDefaultCodeViz(): boolean {
     return this.cg !== null;
   }
 
   /**
    * Get tool definitions with dynamic descriptions based on project size.
-   * The codegraph_explore tool description includes a budget recommendation
+   * The codeviz_explore tool description includes a budget recommendation
    * scaled to the number of indexed files.
    */
   getTools(): ToolDefinition[] {
@@ -324,7 +324,7 @@ export class ToolHandler {
       const budget = getExploreBudget(stats.fileCount);
 
       return tools.map(tool => {
-        if (tool.name === 'codegraph_explore') {
+        if (tool.name === 'codeviz_explore') {
           return {
             ...tool,
             description: `${tool.description} Budget: make at most ${budget} calls for this project (${stats.fileCount.toLocaleString()} files indexed).`,
@@ -338,18 +338,18 @@ export class ToolHandler {
   }
 
   /**
-   * Get CodeGraph instance for a project
+   * Get CodeViz instance for a project
    *
-   * If projectPath is provided, opens that project's CodeGraph (cached).
-   * Otherwise returns the default CodeGraph instance.
+   * If projectPath is provided, opens that project's CodeViz (cached).
+   * Otherwise returns the default CodeViz instance.
    *
-   * Walks up parent directories to find the nearest .codegraph/ folder,
+   * Walks up parent directories to find the nearest .codeviz/ folder,
    * similar to how git finds .git/ directories.
    */
-  private getCodeGraph(projectPath?: string): CodeGraph {
+  private getCodeViz(projectPath?: string): CodeViz {
     if (!projectPath) {
       if (!this.cg) {
-        throw new Error('CodeGraph not initialized for this project. Run \'codegraph init\' first.');
+        throw new Error('CodeViz not initialized for this project. Run \'codeviz init\' first.');
       }
       return this.cg;
     }
@@ -359,11 +359,11 @@ export class ToolHandler {
       return this.projectCache.get(projectPath)!;
     }
 
-    // Walk up parent directories to find nearest .codegraph/
-    const resolvedRoot = findNearestCodeGraphRoot(projectPath);
+    // Walk up parent directories to find nearest .codeviz/
+    const resolvedRoot = findNearestCodeVizRoot(projectPath);
 
     if (!resolvedRoot) {
-      throw new Error(`CodeGraph not initialized in ${projectPath}. Run 'codegraph init' in that project first.`);
+      throw new Error(`CodeViz not initialized in ${projectPath}. Run 'codeviz init' in that project first.`);
     }
 
     // Check if we already have this resolved root cached (different path, same project)
@@ -375,7 +375,7 @@ export class ToolHandler {
     }
 
     // Open and cache under both paths
-    const cg = CodeGraph.openSync(resolvedRoot);
+    const cg = CodeViz.openSync(resolvedRoot);
     this.projectCache.set(resolvedRoot, cg);
     if (projectPath !== resolvedRoot) {
       this.projectCache.set(projectPath, cg);
@@ -409,23 +409,23 @@ export class ToolHandler {
   async execute(toolName: string, args: Record<string, unknown>): Promise<ToolResult> {
     try {
       switch (toolName) {
-        case 'codegraph_search':
+        case 'codeviz_search':
           return await this.handleSearch(args);
-        case 'codegraph_context':
+        case 'codeviz_context':
           return await this.handleContext(args);
-        case 'codegraph_callers':
+        case 'codeviz_callers':
           return await this.handleCallers(args);
-        case 'codegraph_callees':
+        case 'codeviz_callees':
           return await this.handleCallees(args);
-        case 'codegraph_impact':
+        case 'codeviz_impact':
           return await this.handleImpact(args);
-        case 'codegraph_explore':
+        case 'codeviz_explore':
           return await this.handleExplore(args);
-        case 'codegraph_node':
+        case 'codeviz_node':
           return await this.handleNode(args);
-        case 'codegraph_status':
+        case 'codeviz_status':
           return await this.handleStatus(args);
-        case 'codegraph_files':
+        case 'codeviz_files':
           return await this.handleFiles(args);
         default:
           return this.errorResult(`Unknown tool: ${toolName}`);
@@ -436,13 +436,13 @@ export class ToolHandler {
   }
 
   /**
-   * Handle codegraph_search
+   * Handle codeviz_search
    */
   private async handleSearch(args: Record<string, unknown>): Promise<ToolResult> {
     const query = this.validateString(args.query, 'query');
     if (typeof query !== 'string') return query;
 
-    const cg = this.getCodeGraph(args.projectPath as string | undefined);
+    const cg = this.getCodeViz(args.projectPath as string | undefined);
     const kind = args.kind as string | undefined;
     const rawLimit = Number(args.limit) || 10;
     const limit = clamp(rawLimit, 1, 100);
@@ -461,7 +461,7 @@ export class ToolHandler {
   }
 
   /**
-   * Handle codegraph_context
+   * Handle codeviz_context
    */
   private async handleContext(args: Record<string, unknown>): Promise<ToolResult> {
     const task = this.validateString(args.task, 'task');
@@ -473,7 +473,7 @@ export class ToolHandler {
       markSessionConsulted(sessionId);
     }
 
-    const cg = this.getCodeGraph(args.projectPath as string | undefined);
+    const cg = this.getCodeViz(args.projectPath as string | undefined);
     const maxNodes = (args.maxNodes as number) || 20;
     const includeCode = args.includeCode !== false;
 
@@ -527,13 +527,13 @@ export class ToolHandler {
   }
 
   /**
-   * Handle codegraph_callers
+   * Handle codeviz_callers
    */
   private async handleCallers(args: Record<string, unknown>): Promise<ToolResult> {
     const symbol = this.validateString(args.symbol, 'symbol');
     if (typeof symbol !== 'string') return symbol;
 
-    const cg = this.getCodeGraph(args.projectPath as string | undefined);
+    const cg = this.getCodeViz(args.projectPath as string | undefined);
     const limit = clamp((args.limit as number) || 20, 1, 100);
 
     const allMatches = this.findAllSymbols(cg, symbol);
@@ -562,13 +562,13 @@ export class ToolHandler {
   }
 
   /**
-   * Handle codegraph_callees
+   * Handle codeviz_callees
    */
   private async handleCallees(args: Record<string, unknown>): Promise<ToolResult> {
     const symbol = this.validateString(args.symbol, 'symbol');
     if (typeof symbol !== 'string') return symbol;
 
-    const cg = this.getCodeGraph(args.projectPath as string | undefined);
+    const cg = this.getCodeViz(args.projectPath as string | undefined);
     const limit = clamp((args.limit as number) || 20, 1, 100);
 
     const allMatches = this.findAllSymbols(cg, symbol);
@@ -597,13 +597,13 @@ export class ToolHandler {
   }
 
   /**
-   * Handle codegraph_impact
+   * Handle codeviz_impact
    */
   private async handleImpact(args: Record<string, unknown>): Promise<ToolResult> {
     const symbol = this.validateString(args.symbol, 'symbol');
     if (typeof symbol !== 'string') return symbol;
 
-    const cg = this.getCodeGraph(args.projectPath as string | undefined);
+    const cg = this.getCodeViz(args.projectPath as string | undefined);
     const depth = clamp((args.depth as number) || 2, 1, 10);
 
     const allMatches = this.findAllSymbols(cg, symbol);
@@ -644,17 +644,17 @@ export class ToolHandler {
   private static readonly EXPLORE_MAX_OUTPUT = 35000;
 
   /**
-   * Handle codegraph_explore — deep exploration in a single call
+   * Handle codeviz_explore — deep exploration in a single call
    *
    * Strategy: find relevant symbols via graph traversal, group by file,
    * then read contiguous file sections covering all symbols per file.
-   * This replaces multiple codegraph_node + Read calls.
+   * This replaces multiple codeviz_node + Read calls.
    */
   private async handleExplore(args: Record<string, unknown>): Promise<ToolResult> {
     const query = this.validateString(args.query, 'query');
     if (typeof query !== 'string') return query;
 
-    const cg = this.getCodeGraph(args.projectPath as string | undefined);
+    const cg = this.getCodeViz(args.projectPath as string | undefined);
     const maxFiles = clamp((args.maxFiles as number) || 12, 1, 20);
     const projectRoot = cg.getProjectRoot();
 
@@ -934,13 +934,13 @@ export class ToolHandler {
   }
 
   /**
-   * Handle codegraph_node
+   * Handle codeviz_node
    */
   private async handleNode(args: Record<string, unknown>): Promise<ToolResult> {
     const symbol = this.validateString(args.symbol, 'symbol');
     if (typeof symbol !== 'string') return symbol;
 
-    const cg = this.getCodeGraph(args.projectPath as string | undefined);
+    const cg = this.getCodeViz(args.projectPath as string | undefined);
     // Default to false to minimize context usage
     const includeCode = args.includeCode === true;
 
@@ -960,14 +960,14 @@ export class ToolHandler {
   }
 
   /**
-   * Handle codegraph_status
+   * Handle codeviz_status
    */
   private async handleStatus(args: Record<string, unknown>): Promise<ToolResult> {
-    const cg = this.getCodeGraph(args.projectPath as string | undefined);
+    const cg = this.getCodeViz(args.projectPath as string | undefined);
     const stats = cg.getStats();
 
     const lines: string[] = [
-      '## CodeGraph Status',
+      '## CodeViz Status',
       '',
       `**Files indexed:** ${stats.fileCount}`,
       `**Total nodes:** ${stats.nodeCount}`,
@@ -994,10 +994,10 @@ export class ToolHandler {
   }
 
   /**
-   * Handle codegraph_files - get project file structure from the index
+   * Handle codeviz_files - get project file structure from the index
    */
   private async handleFiles(args: Record<string, unknown>): Promise<ToolResult> {
-    const cg = this.getCodeGraph(args.projectPath as string | undefined);
+    const cg = this.getCodeViz(args.projectPath as string | undefined);
     const pathFilter = args.path as string | undefined;
     const pattern = args.pattern as string | undefined;
     const format = (args.format as 'tree' | 'flat' | 'grouped') || 'tree';
@@ -1008,7 +1008,7 @@ export class ToolHandler {
     const allFiles = cg.getFiles();
 
     if (allFiles.length === 0) {
-      return this.textResult('No files indexed. Run `codegraph index` first.');
+      return this.textResult('No files indexed. Run `codeviz index` first.');
     }
 
     // Filter by path prefix
@@ -1210,7 +1210,7 @@ export class ToolHandler {
     return false;
   }
 
-  private findSymbol(cg: CodeGraph, symbol: string): { node: Node; note: string } | null {
+  private findSymbol(cg: CodeViz, symbol: string): { node: Node; note: string } | null {
     // Use higher limit for qualified lookups (e.g., "Session.request") since the
     // target may rank lower in FTS when there are many partial matches
     const limit = symbol.includes('.') ? 50 : 10;
@@ -1244,7 +1244,7 @@ export class ToolHandler {
    * Find ALL symbols matching a name. Used by callers/callees/impact to aggregate
    * results across all matching symbols (e.g., multiple classes with an `execute` method).
    */
-  private findAllSymbols(cg: CodeGraph, symbol: string): { nodes: Node[]; note: string } {
+  private findAllSymbols(cg: CodeViz, symbol: string): { nodes: Node[]; note: string } {
     const results = cg.searchNodes(symbol, { limit: 50 });
 
     if (results.length === 0) {

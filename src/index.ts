@@ -1,5 +1,5 @@
 /**
- * CodeGraph
+ * CodeViz
  *
  * A local-first code intelligence system that builds a semantic
  * knowledge graph from any codebase.
@@ -7,7 +7,7 @@
 
 import * as path from 'path';
 import {
-  CodeGraphConfig,
+  CodeVizConfig,
   Node,
   Edge,
   FileRecord,
@@ -55,16 +55,16 @@ export * from './types';
 export { getDatabasePath } from './db';
 export { getConfigPath } from './config';
 export {
-  getCodeGraphDir,
+  getCodeVizDir,
   isInitialized,
-  findNearestCodeGraphRoot,
-  CODEGRAPH_DIR,
+  findNearestCodeVizRoot,
+  CODEVIZ_DIR,
 } from './directory';
 export { IndexProgress, IndexResult, SyncResult } from './extraction';
 export { detectLanguage, isLanguageSupported, isGrammarLoaded, getSupportedLanguages, initGrammars, loadGrammarsForLanguages, loadAllGrammars } from './extraction';
 export { ResolutionResult } from './resolution';
 export {
-  CodeGraphError,
+  CodeVizError,
   FileError,
   ParseError,
   DatabaseError,
@@ -82,11 +82,11 @@ export { FileWatcher, WatchOptions } from './sync';
 export { MCPServer } from './mcp';
 
 /**
- * Options for initializing a new CodeGraph project
+ * Options for initializing a new CodeViz project
  */
 export interface InitOptions {
   /** Custom configuration overrides */
-  config?: Partial<CodeGraphConfig>;
+  config?: Partial<CodeVizConfig>;
 
   /** Whether to run initial indexing after init */
   index?: boolean;
@@ -96,7 +96,7 @@ export interface InitOptions {
 }
 
 /**
- * Options for opening an existing CodeGraph project
+ * Options for opening an existing CodeViz project
  */
 export interface OpenOptions {
   /** Whether to run sync if files have changed */
@@ -121,14 +121,14 @@ export interface IndexOptions {
 }
 
 /**
- * Main CodeGraph class
+ * Main CodeViz class
  *
  * Provides the primary interface for interacting with the code knowledge graph.
  */
-export class CodeGraph {
+export class CodeViz {
   private db: DatabaseConnection;
   private queries: QueryBuilder;
-  private config: CodeGraphConfig;
+  private config: CodeVizConfig;
   private projectRoot: string;
   private orchestrator: ExtractionOrchestrator;
   private resolver: ReferenceResolver;
@@ -148,7 +148,7 @@ export class CodeGraph {
   private constructor(
     db: DatabaseConnection,
     queries: QueryBuilder,
-    config: CodeGraphConfig,
+    config: CodeVizConfig,
     projectRoot: string
   ) {
     this.db = db;
@@ -156,7 +156,7 @@ export class CodeGraph {
     this.config = config;
     this.projectRoot = projectRoot;
     this.fileLock = new FileLock(
-      path.join(projectRoot, '.codegraph', 'codegraph.lock')
+      path.join(projectRoot, '.codeviz', 'codeviz.lock')
     );
     this.orchestrator = new ExtractionOrchestrator(projectRoot, config, queries);
     this.resolver = createResolver(projectRoot, queries);
@@ -174,21 +174,21 @@ export class CodeGraph {
   // ===========================================================================
 
   /**
-   * Initialize a new CodeGraph project
+   * Initialize a new CodeViz project
    *
-   * Creates the .CodeGraph directory, database, and configuration.
+   * Creates the .CodeViz directory, database, and configuration.
    *
    * @param projectRoot - Path to the project root directory
    * @param options - Initialization options
-   * @returns A new CodeGraph instance
+   * @returns A new CodeViz instance
    */
-  static async init(projectRoot: string, options: InitOptions = {}): Promise<CodeGraph> {
+  static async init(projectRoot: string, options: InitOptions = {}): Promise<CodeViz> {
     await initGrammars();
     const resolvedRoot = path.resolve(projectRoot);
 
     // Check if already initialized
     if (isInitialized(resolvedRoot)) {
-      throw new Error(`CodeGraph already initialized in ${resolvedRoot}`);
+      throw new Error(`CodeViz already initialized in ${resolvedRoot}`);
     }
 
     // Create directory structure
@@ -206,7 +206,7 @@ export class CodeGraph {
     const db = DatabaseConnection.initialize(dbPath);
     const queries = new QueryBuilder(db.getDb());
 
-    const instance = new CodeGraph(db, queries, config, resolvedRoot);
+    const instance = new CodeViz(db, queries, config, resolvedRoot);
 
     // Run initial indexing if requested
     if (options.index) {
@@ -219,12 +219,12 @@ export class CodeGraph {
   /**
    * Initialize synchronously (without indexing)
    */
-  static initSync(projectRoot: string, options: Omit<InitOptions, 'index' | 'onProgress'> = {}): CodeGraph {
+  static initSync(projectRoot: string, options: Omit<InitOptions, 'index' | 'onProgress'> = {}): CodeViz {
     const resolvedRoot = path.resolve(projectRoot);
 
     // Check if already initialized
     if (isInitialized(resolvedRoot)) {
-      throw new Error(`CodeGraph already initialized in ${resolvedRoot}`);
+      throw new Error(`CodeViz already initialized in ${resolvedRoot}`);
     }
 
     // Create directory structure
@@ -242,29 +242,29 @@ export class CodeGraph {
     const db = DatabaseConnection.initialize(dbPath);
     const queries = new QueryBuilder(db.getDb());
 
-    return new CodeGraph(db, queries, config, resolvedRoot);
+    return new CodeViz(db, queries, config, resolvedRoot);
   }
 
   /**
-   * Open an existing CodeGraph project
+   * Open an existing CodeViz project
    *
    * @param projectRoot - Path to the project root directory
    * @param options - Open options
-   * @returns A CodeGraph instance
+   * @returns A CodeViz instance
    */
-  static async open(projectRoot: string, options: OpenOptions = {}): Promise<CodeGraph> {
+  static async open(projectRoot: string, options: OpenOptions = {}): Promise<CodeViz> {
     await initGrammars();
     const resolvedRoot = path.resolve(projectRoot);
 
     // Check if initialized
     if (!isInitialized(resolvedRoot)) {
-      throw new Error(`CodeGraph not initialized in ${resolvedRoot}. Run init() first.`);
+      throw new Error(`CodeViz not initialized in ${resolvedRoot}. Run init() first.`);
     }
 
     // Validate directory structure
     const validation = validateDirectory(resolvedRoot);
     if (!validation.valid) {
-      throw new Error(`Invalid CodeGraph directory: ${validation.errors.join(', ')}`);
+      throw new Error(`Invalid CodeViz directory: ${validation.errors.join(', ')}`);
     }
 
     // Load configuration
@@ -275,7 +275,7 @@ export class CodeGraph {
     const db = DatabaseConnection.open(dbPath);
     const queries = new QueryBuilder(db.getDb());
 
-    const instance = new CodeGraph(db, queries, config, resolvedRoot);
+    const instance = new CodeViz(db, queries, config, resolvedRoot);
 
     // Sync if requested
     if (options.sync) {
@@ -288,18 +288,18 @@ export class CodeGraph {
   /**
    * Open synchronously (without sync)
    */
-  static openSync(projectRoot: string): CodeGraph {
+  static openSync(projectRoot: string): CodeViz {
     const resolvedRoot = path.resolve(projectRoot);
 
     // Check if initialized
     if (!isInitialized(resolvedRoot)) {
-      throw new Error(`CodeGraph not initialized in ${resolvedRoot}. Run init() first.`);
+      throw new Error(`CodeViz not initialized in ${resolvedRoot}. Run init() first.`);
     }
 
     // Validate directory structure
     const validation = validateDirectory(resolvedRoot);
     if (!validation.valid) {
-      throw new Error(`Invalid CodeGraph directory: ${validation.errors.join(', ')}`);
+      throw new Error(`Invalid CodeViz directory: ${validation.errors.join(', ')}`);
     }
 
     // Load configuration
@@ -310,18 +310,18 @@ export class CodeGraph {
     const db = DatabaseConnection.open(dbPath);
     const queries = new QueryBuilder(db.getDb());
 
-    return new CodeGraph(db, queries, config, resolvedRoot);
+    return new CodeViz(db, queries, config, resolvedRoot);
   }
 
   /**
-   * Check if a directory has been initialized as a CodeGraph project
+   * Check if a directory has been initialized as a CodeViz project
    */
   static isInitialized(projectRoot: string): boolean {
     return isInitialized(path.resolve(projectRoot));
   }
 
   /**
-   * Close the CodeGraph instance and release resources
+   * Close the CodeViz instance and release resources
    */
   close(): void {
     this.unwatch();
@@ -337,14 +337,14 @@ export class CodeGraph {
   /**
    * Get the current configuration
    */
-  getConfig(): CodeGraphConfig {
+  getConfig(): CodeVizConfig {
     return { ...this.config };
   }
 
   /**
    * Update configuration
    */
-  updateConfig(updates: Partial<CodeGraphConfig>): void {
+  updateConfig(updates: Partial<CodeVizConfig>): void {
     Object.assign(this.config, updates);
     saveConfig(this.projectRoot, this.config);
     // Recreate orchestrator and resolver with new config
@@ -959,10 +959,10 @@ export class CodeGraph {
   }
 
   /**
-   * Completely remove CodeGraph from the project.
-   * This closes the database and deletes the .CodeGraph directory.
+   * Completely remove CodeViz from the project.
+   * This closes the database and deletes the .CodeViz directory.
    *
-   * WARNING: This permanently deletes all CodeGraph data for the project.
+   * WARNING: This permanently deletes all CodeViz data for the project.
    */
   uninitialize(): void {
     this.close();
@@ -971,4 +971,4 @@ export class CodeGraph {
 }
 
 // Default export
-export default CodeGraph;
+export default CodeViz;
